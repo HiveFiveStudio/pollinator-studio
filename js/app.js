@@ -742,11 +742,12 @@ function summaryDataQA(palette){
 }
 
 function renderDataQA(inputs, palette){
+  const regionPlants = plants.filter(p => p.location.some(loc => inputs.locations.includes(loc)));
   const selectedIds = new Set(palette.map(p=>p.id));
   const fitGroups = palette.reduce((acc,p)=>{ const f=fitReview(p, inputs); acc[f.label]=(acc[f.label]||0)+1; return acc; },{});
   const high = palette.filter(p=>dataConfidence(p).overall.startsWith("Higher")).length;
   const exact = palette.filter(p=>speciesSpecificity(p).level === "high").length;
-  const excluded = plants.filter(p=>!selectedIds.has(p.id)).map(p=>({p, reasons:exclusionReasons(p, inputs)})).filter(x=>x.reasons.length).slice(0,10);
+  const excluded = regionPlants.filter(p=>!selectedIds.has(p.id)).map(p=>({p, reasons:exclusionReasons(p, inputs)})).filter(x=>x.reasons.length).slice(0,10);
   const rows = palette.map(p=>{
     const f = fitReview(p, inputs);
     const d = dataConfidence(p);
@@ -1173,8 +1174,9 @@ function renderMaterials(inputs){
 }
 
 function backupChoices(p, inputs, palette){
+  const regionPlants = plants.filter(x => x.location.some(loc => inputs.locations.includes(loc)));
   const selectedIds = new Set(palette.map(x=>x.id));
-  return plants
+  return regionPlants
     .filter(x=>x.id !== p.id && !selectedIds.has(x.id))
     .filter(x=>!failReasons(x, inputs).length)
     .map(x=>({...x, altScore:scorePlant(x, inputs) + (x.layer === p.layer ? 4 : 0) + (x.tags.some(t=>p.tags.includes(t)) ? 2 : 0)}))
@@ -1237,9 +1239,10 @@ function similarRole(a,b, inputs){
 }
 
 function substitutionSuggestions(inputs, palette){
+  const regionPlants = plants.filter(p => p.location.some(loc => inputs.locations.includes(loc)));
   const selectedIds = new Set(palette.map(p=>p.id));
   const selected = palette.slice();
-  const wanted = plants.map(p=>({...p, wantScore:scorePlant(p, {...inputs, designMode:"advanced", petSafe:false, deer:false, squirrelAware:false, hoa:false})}))
+  const wanted = regionPlants.map(p=>({...p, wantScore:scorePlant(p, {...inputs, designMode:"advanced", petSafe:false, deer:false, squirrelAware:false, hoa:false})}))
     .filter(p=>!selectedIds.has(p.id))
     .sort((a,b)=>b.wantScore-a.wantScore)
     .slice(0,24);
