@@ -1176,12 +1176,16 @@ function renderMaterials(inputs){
 function backupChoices(p, inputs, palette){
   const regionPlants = plants.filter(x => x.location.some(loc => inputs.locations.includes(loc)));
   const selectedIds = new Set(palette.map(x=>x.id));
-  return regionPlants
-    .filter(x=>x.id !== p.id && !selectedIds.has(x.id))
-    .filter(x=>!failReasons(x, inputs).length)
-    .map(x=>({...x, altScore:scorePlant(x, inputs) + (x.layer === p.layer ? 4 : 0) + (x.tags.some(t=>p.tags.includes(t)) ? 2 : 0)}))
-    .sort((a,b)=>b.altScore-a.altScore)
-    .slice(0,2);
+  const pool = regionPlants
+    .filter(x => x.id !== p.id && !selectedIds.has(x.id))
+    .filter(x => !failReasons(x, inputs).length);
+  const score = x => scorePlant(x, inputs) + (x.tags.some(t => p.tags.includes(t)) ? 2 : 0);
+  const sameLayer = pool.filter(x => x.layer === p.layer)
+    .map(x => ({...x, altScore: score(x)})).sort((a,b) => b.altScore - a.altScore);
+  if(sameLayer.length >= 2) return sameLayer.slice(0, 3);
+  const other = pool.filter(x => x.layer !== p.layer)
+    .map(x => ({...x, altScore: score(x)})).sort((a,b) => b.altScore - a.altScore);
+  return [...sameLayer, ...other].slice(0, 2);
 }
 
 function backupText(p, inputs, palette){
@@ -1250,7 +1254,7 @@ function substitutionSuggestions(inputs, palette){
   for(const p of wanted){
     const reasons = failReasons(p, inputs);
     if(!reasons.length) continue;
-    const substitute = selected.find(s=>similarRole(p,s,inputs) && !failReasons(s, inputs).length) || selected.find(s=>s.layer===p.layer) || selected[0];
+    const substitute = selected.find(s=>s.layer===p.layer) || selected.find(s=>s.tags.some(t=>p.tags.includes(t))) || null;
     if(substitute) suggestions.push({excluded:p, substitute, reasons});
     if(suggestions.length >= 6) break;
   }
