@@ -26,7 +26,9 @@ Load order matters: `plant-data.js` must come **before** `app.js` in `index.html
    opening, which is a core requirement.
 2. **Edit files in place.** Change only the relevant file/section. Never
    regenerate the whole app from memory — that is what caused past regressions.
-3. **One change at a time**, then commit (`git add -A && git commit -m "..."`).
+3. **One change at a time**, then commit with a **single short one-line message**:
+   `git commit -m "Short message here"`. Never use multi-line here-strings or
+   heredocs in commit messages — they break the Windows PowerShell command parser.
 4. **Keep the safety disclaimers.** Prototype/verify-locally language must stay,
    and gets more important as coverage expands beyond Houston.
 

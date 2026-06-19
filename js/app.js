@@ -25,7 +25,7 @@ function readInputs(){
   const goals = selectedGoals();
   const squirrelMode = $("squirrelMode").value;
   const snakeMode = $("snakeMode") ? $("snakeMode").value : "ignore";
-  const zip = $("zip").value.trim() || "unknown";
+  const zip = $("zip").value;
   return {
     zip,
     locations: regionFromZip(zip).locations,
@@ -83,9 +83,7 @@ function targetSpeciesCount(area, inputs){
 function regionFromZip(zip){
   const z = String(zip).replace(/\D/g, "").slice(0,5);
   if(z === "77429") return {name:"Houston / Cypress, TX",shortName:"Houston / Gulf Coast",status:"target",locations:["77429"],note:"ZIP 77429 — Houston area (Cypress, TX); Gulf Coast native plant palette."};
-  if(z === "80906") return {name:"Colorado Springs / Cheyenne Mtn, CO",shortName:"Colorado Springs / Front Range",status:"target",locations:["80906"],note:"ZIP 80906 — Colorado Springs (Cheyenne Mountain area); Front Range native plant palette."};
-  if(z) return {name:"Unsupported ZIP",shortName:"Unsupported",status:"unsupported",locations:null,note:`ZIP ${z} is not covered yet. This prototype supports 77429 (Houston, TX) and 80906 (Colorado Springs, CO).`};
-  return {name:"Unsupported ZIP",shortName:"Unsupported",status:"unsupported",locations:null,note:"Enter a supported ZIP: 77429 (Houston, TX) or 80906 (Colorado Springs, CO)."};
+  return {name:"Colorado Springs / Cheyenne Mtn, CO",shortName:"Colorado Springs / Front Range",status:"target",locations:["80906"],note:"ZIP 80906 — Colorado Springs (Cheyenne Mountain area); Front Range native plant palette."};
 }
 
 function conditionMatches(p, inputs, strict){
@@ -125,7 +123,6 @@ function conditionBonus(p, inputs){
 }
 
 function matches(p, inputs){
-  if(inputs.locations === null) return false;
   if(inputs.locations && inputs.locations.length && p.location && p.location.length) {
     if(!p.location.some(loc => inputs.locations.includes(loc))) return false;
   }
@@ -204,31 +201,9 @@ function scorePlant(p, inputs){
   return score;
 }
 
-function renderUnsupportedZip(zip){
-  const z = String(zip).trim();
-  const html = `
-    <div class="generation-notice no-print"><strong>ZIP not supported.</strong></div>
-    <p class="eyebrow">Prototype coverage</p>
-    <h2>${z ? `ZIP ${esc(z)} is not covered yet` : "No ZIP entered"}</h2>
-    <p>This prototype currently supports two areas:</p>
-    <ul style="margin:1rem 0 1rem 1.5rem">
-      <li><strong>77429</strong> — Houston / Cypress, TX (Gulf Coast native plants)</li>
-      <li><strong>80906</strong> — Colorado Springs, CO (Front Range native plants)</li>
-    </ul>
-    <p>Enter one of those ZIPs and click <strong>Generate design</strong>.</p>`;
-  $('results').innerHTML = html;
-  $('results').classList.remove('empty');
-  $('results').scrollIntoView({behavior:'smooth', block:'start'});
-}
-
 function generate(){
   const inputs = readInputs();
   runCount += 1;
-
-  if(inputs.locations === null){
-    renderUnsupportedZip(inputs.zip);
-    return;
-  }
 
   let candidates = plants.filter(p => matches(p, inputs));
   if(candidates.length < 6){
@@ -1856,7 +1831,6 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
-$("zip").addEventListener("blur", () => updateConditionDropdown($("zip").value));
 $("zip").addEventListener("change", () => updateConditionDropdown($("zip").value));
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
