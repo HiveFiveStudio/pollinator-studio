@@ -1665,6 +1665,49 @@ function updateConditionDropdown(zip){
   else sel.value = conditions[0].value;
 }
 
+const regionSoil = {
+  "77429": [
+    {value:"unknown", label:"Unknown"},
+    {value:"clay",    label:"Clay / gumbo"},
+    {value:"loam",    label:"Loam"},
+    {value:"sandy",   label:"Sandy"}
+  ],
+  "80906": [
+    {value:"sandy",   label:"Sandy / decomposed granite"},
+    {value:"sandy",   label:"Gravelly / rocky"},
+    {value:"clay",    label:"Clay (alkaline)"},
+    {value:"loam",    label:"Clay loam"},
+    {value:"loam",    label:"Loam"},
+    {value:"unknown", label:"Not sure"}
+  ]
+};
+
+const regionMoisture = {
+  "77429": [
+    {value:"dry",     label:"Dry / fast draining"},
+    {value:"average", label:"Average"},
+    {value:"wet",     label:"Wet / rain garden"}
+  ],
+  "80906": [
+    {value:"dry",     label:"Xeric / low water"},
+    {value:"average", label:"Moderate water"},
+    {value:"wet",     label:"Higher water (irrigated or low spot)"}
+  ]
+};
+
+function updateSoilMoistureDropdowns(zip){
+  const z = String(zip).replace(/\D/g,"").slice(0,5);
+  [["soil", regionSoil], ["moisture", regionMoisture]].forEach(([id, lookup]) => {
+    const opts = lookup[z];
+    const sel = $(id);
+    if(!sel || !opts) return;
+    const current = sel.value;
+    sel.innerHTML = opts.map(o=>`<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("");
+    if(opts.some(o=>o.value === current)) sel.value = current;
+    else sel.value = opts[0].value;
+  });
+}
+
 const sampleScenarios = {
   "77429": [
     {id:"sampleFrontBtn", label:"77429 front yard",       run:()=>setSample(["biodiversity","bees"],"frontCurb","full","average","hoaFront",16,6,false,"flowerBed")},
@@ -1820,6 +1863,7 @@ function setSample(goals, style, sun="part", moisture="average", condition="stan
   $("mosquitoAware").checked = mosquitoAware;
   if($("snakeMode")) $("snakeMode").value = "ignore";
   updateConditionDropdown($("zip").value);
+  updateSoilMoistureDropdowns($("zip").value);
   generate();
 }
 
@@ -1847,6 +1891,7 @@ function resetInputs(){
   $("snakeMode").value = "ignore";
   if($("bearMode")) $("bearMode").value = "ignore";
   updateConditionDropdown("77429");
+  updateSoilMoistureDropdowns("77429");
   updateSampleButtons("77429");
   updateBearModeVisibility("77429");
   $("results").innerHTML = `<div class="empty"><h2>No design generated yet</h2><p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p></div>`;
@@ -1890,7 +1935,7 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
-$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); });
+$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSoilMoistureDropdowns($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); });
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
 $("printBtn").addEventListener("click", printDesignSheet);
@@ -1901,6 +1946,7 @@ $("printBtn").addEventListener("click", printDesignSheet);
     if(s) s.run();
   });
 });
+updateSoilMoistureDropdowns($("zip").value);
 updateSampleButtons($("zip").value);
 updateBearModeVisibility($("zip").value);
 })();
