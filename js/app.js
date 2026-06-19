@@ -25,6 +25,7 @@ function readInputs(){
   const goals = selectedGoals();
   const squirrelMode = $("squirrelMode").value;
   const snakeMode = $("snakeMode") ? $("snakeMode").value : "ignore";
+  const bearMode = $("bearMode") ? $("bearMode").value : "ignore";
   const zip = $("zip").value;
   return {
     zip,
@@ -42,6 +43,7 @@ function readInputs(){
     goal:goals[0],
     squirrelMode,
     snakeMode,
+    bearMode,
     snakeAware: snakeMode !== "ignore",
     snakePlantCandidates: snakeMode === "spikyAromatic",
     style:$("style").value,
@@ -180,6 +182,8 @@ function scorePlant(p, inputs){
     if(p.aggressive && (p.tags.includes("cover") || p.tags.includes("shade grass"))) score -= hasGoal(inputs, "cardinals") ? 2 : 6;
     if(inputs.snakePlantCandidates && (p.tags.includes("spiky edge") || p.tags.includes("aromatic edge"))) score += 4;
   }
+  if(p.bear && inputs.bearMode === "reduce") score = Math.max(1, Math.round(score * 0.2));
+  if(p.bear && inputs.bearMode === "attract") score += 8;
   if(p.tags.includes("vine")){
     if(inputs.layoutType === "fenceLine" || inputs.layoutType === "foundation") score += 3;
     else if(inputs.layoutType === "flowerBed") score -= 3;
@@ -398,12 +402,16 @@ function render(inputs, palette, score){
     if(inputs.squirrelAware && p.squirrel >= 3) warnings.push(`${p.common} may also attract squirrels because berries, fruit, or dense wildlife cover are shared resources.`);
     if(inputs.snakeAware && (p.tags.includes("groundcover") || p.tags.includes("dense low cover") || (p.aggressive && p.tags.includes("cover")))) warnings.push(`${p.common} may create low hiding cover unless it is thinned, edged, or kept out of high-traffic areas.`);
     if(inputs.snakeAware && p.tags.includes("spiky edge")) warnings.push(`${p.common} is a spiky-edge candidate; keep it away from narrow paths, pets, and children.`);
+    if(p.bear && inputs.bearMode === "reduce") warnings.push(`${p.common} produces berries that attract black bears (per Colorado Parks and Wildlife); it is included because it matched site and bird-habitat criteria, but was down-ranked by Reduce bear attraction mode.`);
+    if(p.bear && inputs.bearMode === "attract") warnings.push(`${p.common} is a berry-producing bear-food plant. Colorado Parks and Wildlife strongly discourages intentionally attracting bears to residential yards.`);
   });
   if(hasGoal(inputs, "cardinals")) warnings.push("Cardinals are birds, not pollinators. This goal optimizes for seed/berry value, cover, and layered structure.");
   if(inputs.squirrelAware) warnings.push("Squirrel-aware mode avoids intentional squirrel attractors, but bird-supporting seed heads and berries cannot fully exclude squirrels.");
+  if(inputs.bearMode === "reduce" && (hasGoal(inputs, "cardinals") || hasGoal(inputs, "biodiversity")) && palette.some(p => p.bear)) warnings.push("Conflict: berry/cover plants that support birds (cardinals, biodiversity) are also bear-food sources. Bear attraction is minimized but these plants may still appear because no Colorado-appropriate substitute provides equivalent bird habitat.");
 
   const html = `
     <div class="generation-notice no-print"><strong>Design generated.</strong> Review the concept below, then use the tabs to inspect the plant palette, full planting map, nursery list, warnings, score, region notes, and visual prompts.</div>
+    ${inputs.bearMode === "attract" ? `<div class="generation-notice no-print" style="background:#fff3cd;border-color:#e6a817"><strong>Bear safety warning:</strong> Colorado Parks and Wildlife strongly discourages intentionally attracting black bears to residential yards. Bears that associate homes with food sources are often euthanized. Intentional wildlife feeding may violate local ordinances. This mode is provided for informational and restoration-context use only — not as a recommendation for typical residential planting.</div>` : ""}
     <p class="eyebrow">Generated concept</p>
     <h2>${esc(title)}</h2>
     <p>A ${esc(inputs.length)} × ${esc(inputs.depth)} foot ${esc(layoutTypeLabel(inputs.layoutType))} in ${siteLabel(inputs.sun)} for <strong>${esc(region.name)}</strong>, optimized for ${esc(goalListText(inputs).toLowerCase())}. Design mode: <strong>${esc(mode.label)}</strong>. The palette uses ${palette.length} plant species and about ${totalPlants} total plants.</p>
@@ -1276,6 +1284,17 @@ function riskFindings(inputs, palette){
     if(snakeDenseRisk.length) risks.push(["Snake hiding-cover caution", snakeDenseRisk, "Avoid dense low growth beside doors, paths, seating, and house foundations; thin or substitute if visibility is poor."]);
     risks.push(["Snake-aware limitation", ["habitat management", "rodent reduction", "open visibility"], "Plants alone are not reliable snake deterrents. The useful design move is less hiding cover and fewer food/rodent attractors."]);
   }
+  if(inputs.bearMode !== "ignore"){
+    const bearPlants = palette.filter(p => p.bear).map(p => p.common);
+    if(inputs.bearMode === "reduce"){
+      if(bearPlants.length) risks.push(["Bear attractants down-ranked", bearPlants, "These berry/fruit plants were heavily down-ranked. If they still appear, it is because bird-habitat or site constraints left no suitable substitute. Consider removing or relocating them away from the house."]);
+      risks.push(["Bear-attract limitation", ["no repellent plants exist", "remove food sources", "secure trash and bird feeders"], "No plant species reliably repels bears. The practical approach is to minimize high-calorie food sources near entry points, secure all food waste, and remove bird feeders when bears are active (April–November in Colorado)."]);
+    }
+    if(inputs.bearMode === "attract"){
+      if(bearPlants.length) risks.push(["Bear attractant plants in palette", bearPlants, "These fruit/berry plants were prioritized. Bears that associate residential areas with food are frequently euthanized by wildlife agencies.", false]);
+      risks.push(["Bear safety — agency guidance", ["Colorado Parks and Wildlife", "local ordinances", "human safety"], "CPW strongly discourages intentionally attracting bears to homes. It may violate local wildlife ordinances and puts both residents and bears at risk. Consider native bear habitat restoration away from structures instead."]);
+    }
+  }
   if(inputs.condition === "postFreeze") risks.push(["Post-freeze recovery", palette.map(p=>p.common).slice(0,6), "Favor root-hardy structure, avoid relying on a single woody focal point, and plan for visible winter cutback."]);
   if(!risks.length) risks.push(["No major V3.0 Static risk flags", ["Selected palette"], "The current run avoided the main prototype risk categories.", true]);
   return risks;
@@ -1285,7 +1304,8 @@ function renderRiskPanel(inputs, palette, extraWarnings=[]){
   const extra = extraWarnings && extraWarnings.length ? `<div class="tab-note-card"><h3>Run-specific notes moved from the top of the page</h3><ul class="logic-list">${extraWarnings.map(w=>`<li>${esc(w)}</li>`).join("")}</ul></div>` : `<div class="status">No pet-toxicity, aggressive-spread, squirrel, snake, or special run warnings were flagged for this generated palette.</div>`;
   const mosquito = inputs.mosquitoAware ? `<div class="tab-note-card"><h3>Mosquito-aware note</h3><p>This adds aromatic, pollinator-compatible edge plants near seating areas. It does not claim passive plants control mosquitoes; remove standing water and use proven bite-prevention practices.</p></div>` : "";
   const snake = inputs.snakeAware ? `<div class="tab-note-card"><h3>Snake-aware note</h3><p>This favors open-base structure and reduces dense low cover. It does not prove or promise that plants repel snakes; reduce clutter, rodents, and hidden damp cover as the primary prevention strategy.</p></div>` : "";
-  return extra + mosquito + snake + `<div class="risk-list">` + riskFindings(inputs, palette).map(([title,items,note,good])=>`<div class="risk-item ${good ? "good" : ""}"><h3>${esc(title)}</h3><p>${items.slice(0,10).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</p><p>${esc(note)}</p></div>`).join("") + `</div>`;
+  const bear = (inputs.bearMode === "reduce") ? `<div class="tab-note-card"><h3>Reduce bear attraction — note</h3><p>Berry and fruit plants have been heavily down-ranked. No plant species repels bears. The practical strategy is to minimize high-calorie food sources near the home, secure trash and bird feeders, and follow <a href="https://cpw.state.co.us/learn/Pages/LivingwithWildlife-Bears.aspx" target="_blank" rel="noopener">Colorado Parks and Wildlife bear-smart guidelines</a>.</p></div>` : (inputs.bearMode === "attract") ? `<div class="tab-note-card" style="border-left:4px solid #e6a817"><h3>Attract bears — safety warning</h3><p><strong>Colorado Parks and Wildlife strongly discourages intentionally attracting black bears to residential yards.</strong> Bears that associate homes with food are frequently euthanized. This may violate local ordinances. This mode is provided for informational use only.</p></div>` : "";
+  return extra + mosquito + snake + bear + `<div class="risk-list">` + riskFindings(inputs, palette).map(([title,items,note,good])=>`<div class="risk-item ${good ? "good" : ""}"><h3>${esc(title)}</h3><p>${items.slice(0,10).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</p><p>${esc(note)}</p></div>`).join("") + `</div>`;
 }
 
 function renderWhy(inputs, palette, score, region){
@@ -1307,6 +1327,8 @@ function renderWhy(inputs, palette, score, region){
   else filtered.push("Squirrel handling was set to ignore, so fruit/berry/shared wildlife resources were not suppressed.");
   if(inputs.mosquitoAware) filtered.push("Mosquito-aware add-on boosted aromatic edge plants but did not score them as mosquito control.");
   if(inputs.snakeAware) filtered.push("Snake-aware mode favored open-base, spiky-edge, or aromatic-edge candidates and suppressed dense low hiding cover; it does not claim plants repel snakes.");
+  if(inputs.bearMode === "reduce") filtered.push("Reduce bear attraction mode applied a heavy score penalty to berry/fruit plants tagged as black bear attractants per CPW guidance; no plant repels bears.");
+  if(inputs.bearMode === "attract") filtered.push("Attract bears mode boosted berry/fruit bear-attractant plants. Colorado Parks and Wildlife discourages intentionally attracting bears to residential yards.");
   const boosts = [];
   boosts.push(["Seasonal coverage", [`Spring ${score.seasonal.spring.months}/3 months`, `Summer ${score.seasonal.summer.months}/3 months`, `Fall ${score.seasonal.fall.months}/3 months`]]);
   if(hostPlants.length) boosts.push(["Monarch host support", hostPlants]);
@@ -1668,6 +1690,14 @@ function updateSampleButtons(zip){
   scenarios.forEach(s => { const btn = $(s.id); if(btn) btn.textContent = s.label; });
 }
 
+function updateBearModeVisibility(zip){
+  const container = $("bearModeContainer");
+  if(!container) return;
+  const isCO = String(zip).replace(/\D/g,"").slice(0,5) === "80906";
+  container.style.display = isCO ? "" : "none";
+  if(!isCO && $("bearMode")) $("bearMode").value = "ignore";
+}
+
 function showTab(name){
   const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", substitutions:"Substitutions", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.textContent === match));
@@ -1815,8 +1845,10 @@ function resetInputs(){
   $("hoa").checked = true;
   $("mosquitoAware").checked = false;
   $("snakeMode").value = "ignore";
+  if($("bearMode")) $("bearMode").value = "ignore";
   updateConditionDropdown("77429");
   updateSampleButtons("77429");
+  updateBearModeVisibility("77429");
   $("results").innerHTML = `<div class="empty"><h2>No design generated yet</h2><p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p></div>`;
 }
 
@@ -1858,7 +1890,7 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
-$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSampleButtons($("zip").value); });
+$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); });
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
 $("printBtn").addEventListener("click", printDesignSheet);
@@ -1870,4 +1902,5 @@ $("printBtn").addEventListener("click", printDesignSheet);
   });
 });
 updateSampleButtons($("zip").value);
+updateBearModeVisibility($("zip").value);
 })();
