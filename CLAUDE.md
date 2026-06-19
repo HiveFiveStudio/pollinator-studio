@@ -53,6 +53,15 @@ Update the version string in ALL of these places (search for the current version
 - [ ] Plant-card images load from `img/plants/<id>.svg`; click-to-enlarge works
 - [ ] Materials tab numbers are present; Print / save PDF works
 
+## Plant-data tagging rules (enforce when adding records)
+- **Bear attractants (Colorado plants):** any Colorado plant that produces fleshy
+  fruit, berries, or nuts must be tagged `bear:true`. This follows Colorado Parks &
+  Wildlife guidance on high-calorie bear food sources. Examples that require the tag
+  if added: chokecherry (*Prunus virginiana*), wild plum (*Prunus americana*), Gambel
+  oak (*Quercus gambelii*, acorns), hawthorn, elderberry, and any other shrub or tree
+  with fleshy fruit. Dry seed heads (grasses, composites) do **not** qualify.
+  Currently tagged: golden currant, Saskatoon serviceberry.
+
 ## National expansion (the real roadmap)
 Going national is mostly a **data** problem, not a code problem. The path:
 1. Map ZIP -> geography (USDA hardiness zone + state and/or EPA ecoregion).
