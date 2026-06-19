@@ -1643,6 +1643,31 @@ function updateConditionDropdown(zip){
   else sel.value = conditions[0].value;
 }
 
+const sampleScenarios = {
+  "77429": [
+    {id:"sampleFrontBtn", label:"77429 front yard",       run:()=>setSample(["biodiversity","bees"],"frontCurb","full","average","hoaFront",16,6,false,"flowerBed")},
+    {id:"sampleBackBtn",  label:"Backyard biodiversity",  run:()=>{setSample(["biodiversity","cardinals","butterflies"],"backyardHabitat","part","average","standard",22,10,false,"flowerBed");$("designMode").value="advanced";generate();}},
+    {id:"samplePatioBtn", label:"Patio hummingbirds",     run:()=>setSample(["hummingbirds","butterflies"],"patioView","part","average","patioContainer",12,6,true,"patioCluster")},
+    {id:"sampleFenceBtn", label:"Fence-line butterflies", run:()=>setSample(["butterflies","monarchs","bees"],"colorful","full","average","standard",20,5,false,"fenceLine")},
+    {id:"sampleRainBtn",  label:"Rain-garden corner",     run:()=>setSample(["biodiversity","monarchs","bees"],"prairie","full","wet","rainGarden",16,8,false,"rainPocket")},
+    {id:"sampleSnakeBtn", label:"Snake-aware front bed",  run:()=>{setSample(["biodiversity","bees"],"frontCurb","full","dry","urbanHeat",16,6,false,"flowerBed");$("nativeOnly").checked=false;$("snakeMode").value="spikyAromatic";generate();}}
+  ],
+  "80906": [
+    {id:"sampleFrontBtn", label:"80906 xeric front bed",  run:()=>setSample(["biodiversity","bees"],"frontCurb","full","dry","xeric",16,6,false,"flowerBed","oval","80906")},
+    {id:"sampleBackBtn",  label:"Rock garden border",     run:()=>setSample(["bees","butterflies"],"colorful","full","dry","rockGarden",14,5,false,"flowerBed","kidney","80906")},
+    {id:"samplePatioBtn", label:"Patio hummingbirds",     run:()=>setSample(["hummingbirds","bees"],"patioView","part","average","patioContainer",10,6,false,"patioCluster","oval","80906")},
+    {id:"sampleFenceBtn", label:"High-desert monarchs",   run:()=>setSample(["monarchs","butterflies","bees"],"prairie","full","dry","highDesert",18,7,false,"flowerBed","oval","80906")},
+    {id:"sampleRainBtn",  label:"Shaded wildflower bed",  run:()=>setSample(["biodiversity","hummingbirds"],"backyardHabitat","part","average","shadedSite",14,7,false,"flowerBed","kidney","80906")},
+    {id:"sampleSnakeBtn", label:"Fence-line pollinators", run:()=>setSample(["butterflies","bees","monarchs"],"colorful","full","dry","xeric",20,5,false,"fenceLine","strip","80906")}
+  ]
+};
+
+function updateSampleButtons(zip){
+  const z = String(zip).replace(/\D/g,"").slice(0,5);
+  const scenarios = sampleScenarios[z] || sampleScenarios["77429"];
+  scenarios.forEach(s => { const btn = $(s.id); if(btn) btn.textContent = s.label; });
+}
+
 function showTab(name){
   const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", substitutions:"Substitutions", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.textContent === match));
@@ -1743,14 +1768,14 @@ function setGoalChecks(goals){
   if(!document.querySelectorAll(".goalCheck:checked").length && $("goalBiodiversity")) $("goalBiodiversity").checked = true;
 }
 
-function setSample(goals, style, sun="part", moisture="average", condition="standard", length=14, depth=6, mosquitoAware=false, layoutType="flowerBed", bedShape="oval"){
+function setSample(goals, style, sun="part", moisture="average", condition="standard", length=14, depth=6, mosquitoAware=false, layoutType="flowerBed", bedShape="oval", zip="77429"){
   const list = Array.isArray(goals) ? goals : [goals];
-  $("zip").value = "77429";
+  $("zip").value = zip;
   $("length").value = length;
   $("depth").value = depth;
   $("sun").value = sun;
   $("moisture").value = moisture;
-  $("soil").value = condition === "coastalExposure" ? "sandy" : "clay";
+  $("soil").value = (condition === "coastalExposure" || condition === "xeric" || condition === "rockGarden" || condition === "highDesert") ? "sandy" : "clay";
   $("condition").value = condition;
   $("layoutType").value = layoutType;
   if($("bedShape")) $("bedShape").value = bedShape;
@@ -1791,6 +1816,7 @@ function resetInputs(){
   $("mosquitoAware").checked = false;
   $("snakeMode").value = "ignore";
   updateConditionDropdown("77429");
+  updateSampleButtons("77429");
   $("results").innerHTML = `<div class="empty"><h2>No design generated yet</h2><p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p></div>`;
 }
 
@@ -1832,14 +1858,16 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
-$("zip").addEventListener("change", () => updateConditionDropdown($("zip").value));
+$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSampleButtons($("zip").value); });
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
 $("printBtn").addEventListener("click", printDesignSheet);
-$("sampleFrontBtn").addEventListener("click", () => setSample(["biodiversity","bees"], "frontCurb", "full", "average", "hoaFront", 16, 6, false, "flowerBed"));
-$("sampleBackBtn").addEventListener("click", () => { setSample(["biodiversity","cardinals","butterflies"], "backyardHabitat", "part", "average", "standard", 22, 10, false, "flowerBed"); $("designMode").value = "advanced"; generate(); });
-$("samplePatioBtn").addEventListener("click", () => setSample(["hummingbirds","butterflies"], "patioView", "part", "average", "patioContainer", 12, 6, true, "patioCluster"));
-$("sampleFenceBtn").addEventListener("click", () => setSample(["butterflies","monarchs","bees"], "colorful", "full", "average", "standard", 20, 5, false, "fenceLine"));
-$("sampleRainBtn").addEventListener("click", () => setSample(["biodiversity","monarchs","bees"], "prairie", "full", "wet", "rainGarden", 16, 8, false, "rainPocket"));
-$("sampleSnakeBtn").addEventListener("click", () => { setSample(["biodiversity","bees"], "frontCurb", "full", "dry", "urbanHeat", 16, 6, false, "flowerBed"); $("nativeOnly").checked = false; $("snakeMode").value = "spikyAromatic"; generate(); });
+["sampleFrontBtn","sampleBackBtn","samplePatioBtn","sampleFenceBtn","sampleRainBtn","sampleSnakeBtn"].forEach(id => {
+  $(id).addEventListener("click", () => {
+    const z = String($("zip").value).replace(/\D/g,"").slice(0,5);
+    const s = (sampleScenarios[z] || sampleScenarios["77429"]).find(x => x.id === id);
+    if(s) s.run();
+  });
+});
+updateSampleButtons($("zip").value);
 })();
