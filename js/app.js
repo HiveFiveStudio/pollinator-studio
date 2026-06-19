@@ -25,8 +25,10 @@ function readInputs(){
   const goals = selectedGoals();
   const squirrelMode = $("squirrelMode").value;
   const snakeMode = $("snakeMode") ? $("snakeMode").value : "ignore";
+  const zip = $("zip").value.trim() || "unknown";
   return {
-    zip:$("zip").value.trim() || "unknown",
+    zip,
+    locations: regionFromZip(zip).locations,
     length:clampNumber($("length").value, 14, 3, 100),
     depth:clampNumber($("depth").value, 6, 2, 50),
     sun:$("sun").value,
@@ -80,11 +82,11 @@ function targetSpeciesCount(area, inputs){
 
 function regionFromZip(zip){
   const z = String(zip).replace(/\D/g, "").slice(0,5);
-  if(/^770/.test(z)) return {name:"Houston urban core",status:"target",note:"ZIP appears to be inside Houston; using the V3.0 Static Houston urban Gulf Coast profile."};
-  if(/^(773|774|775)/.test(z)) return {name:"Greater Houston / Upper Texas Coast",status:"target",note:"ZIP appears to be in the Greater Houston or upper Texas Coast area; using the Gulf Coast profile."};
-  if(/^(776|777|779)/.test(z)) return {name:"Upper / middle Texas Gulf Coast",status:"target",note:"ZIP appears to be in the broader Texas Gulf Coast band; using the Gulf Coast profile."};
-  if(z) return {name:"Outside the Houston-focused prototype",status:"fallback",note:"V3.0 Static is Houston/Texas Gulf Coast-focused. This ZIP is accepted, but plant selection still uses the Houston Gulf Coast starter palette."};
-  return {name:"Unknown ZIP",status:"fallback",note:"No ZIP was recognized; using Houston Gulf Coast defaults."};
+  if(/^770/.test(z)) return {name:"Houston urban core",status:"target",locations:["77429"],note:"ZIP appears to be inside Houston; using the V3.0 Static Houston urban Gulf Coast profile."};
+  if(/^(773|774|775)/.test(z)) return {name:"Greater Houston / Upper Texas Coast",status:"target",locations:["77429"],note:"ZIP appears to be in the Greater Houston or upper Texas Coast area; using the Gulf Coast profile."};
+  if(/^(776|777|779)/.test(z)) return {name:"Upper / middle Texas Gulf Coast",status:"target",locations:["77429"],note:"ZIP appears to be in the broader Texas Gulf Coast band; using the Gulf Coast profile."};
+  if(z) return {name:"Outside the Houston-focused prototype",status:"fallback",locations:[],note:"V3.0 Static is Houston/Texas Gulf Coast-focused. This ZIP is accepted, but plant selection still uses the Houston Gulf Coast starter palette."};
+  return {name:"Unknown ZIP",status:"fallback",locations:[],note:"No ZIP was recognized; using Houston Gulf Coast defaults."};
 }
 
 function conditionMatches(p, inputs, strict){
@@ -116,6 +118,9 @@ function conditionBonus(p, inputs){
 }
 
 function matches(p, inputs){
+  if(inputs.locations && inputs.locations.length && p.location && p.location.length) {
+    if(!p.location.some(loc => inputs.locations.includes(loc))) return false;
+  }
   if(inputs.nativeOnly && !p.native) return false;
   if(!p.sun.includes(inputs.sun)) return false;
   if(!p.moist.includes(inputs.moisture)) return false;
