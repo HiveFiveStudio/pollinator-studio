@@ -1,0 +1,382 @@
+[
+  {
+    "id": "aquatic-milkweed",
+    "common": "Aquatic milkweed",
+    "scientific": "Asclepias perennis",
+    "layer": "middle",
+    "color": "white",
+    "native": true,
+    "image": "img/plants/aquatic-milkweed.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "green-milkweed",
+    "common": "Green milkweed",
+    "scientific": "Asclepias viridis",
+    "layer": "middle",
+    "color": "green",
+    "native": true,
+    "image": "img/plants/green-milkweed.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "gulf-penstemon",
+    "common": "Gulf Coast penstemon",
+    "scientific": "Penstemon tenuis",
+    "layer": "front",
+    "color": "lavender",
+    "native": true,
+    "image": "img/plants/gulf-penstemon.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "lanceleaf-coreopsis",
+    "common": "Lanceleaf coreopsis",
+    "scientific": "Coreopsis lanceolata",
+    "layer": "front",
+    "color": "yellow",
+    "native": true,
+    "image": "img/plants/lanceleaf-coreopsis.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "frogfruit",
+    "common": "Texas frogfruit",
+    "scientific": "Phyla nodiflora",
+    "layer": "front",
+    "color": "white",
+    "native": true,
+    "image": "img/plants/frogfruit.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "indian-blanket",
+    "common": "Indian blanket",
+    "scientific": "Gaillardia pulchella",
+    "layer": "front",
+    "color": "red-yellow",
+    "native": true,
+    "image": "img/plants/indian-blanket.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "mealy-blue-sage",
+    "common": "Mealy blue sage",
+    "scientific": "Salvia farinacea",
+    "layer": "middle",
+    "color": "blue",
+    "native": true,
+    "image": "img/plants/mealy-blue-sage.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "scarlet-sage",
+    "common": "Scarlet sage",
+    "scientific": "Salvia coccinea",
+    "layer": "middle",
+    "color": "red",
+    "native": true,
+    "image": "img/plants/scarlet-sage.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "turks-cap",
+    "common": "Turk's cap",
+    "scientific": "Malvaviscus arboreus var. drummondii",
+    "layer": "back",
+    "color": "red",
+    "native": true,
+    "image": "img/plants/turks-cap.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "cardinal-flower",
+    "common": "Cardinal flower",
+    "scientific": "Lobelia cardinalis",
+    "layer": "middle",
+    "color": "red",
+    "native": true,
+    "image": "img/plants/cardinal-flower.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "coral-honeysuckle",
+    "common": "Coral honeysuckle",
+    "scientific": "Lonicera sempervirens",
+    "layer": "back",
+    "color": "red",
+    "native": true,
+    "image": "img/plants/coral-honeysuckle.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "crossvine",
+    "common": "Crossvine",
+    "scientific": "Bignonia capreolata",
+    "layer": "back",
+    "color": "orange",
+    "native": true,
+    "image": "img/plants/crossvine.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "blue-mistflower",
+    "common": "Blue mistflower",
+    "scientific": "Conoclinium coelestinum",
+    "layer": "middle",
+    "color": "blue",
+    "native": true,
+    "image": "img/plants/blue-mistflower.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "fall-obedient",
+    "common": "Fall obedient plant",
+    "scientific": "Physostegia virginiana",
+    "layer": "middle",
+    "color": "pink",
+    "native": true,
+    "image": "img/plants/fall-obedient.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "frostweed",
+    "common": "Frostweed",
+    "scientific": "Verbesina virginica",
+    "layer": "back",
+    "color": "white",
+    "native": true,
+    "image": "img/plants/frostweed.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "rough-coneflower",
+    "common": "Rough coneflower",
+    "scientific": "Rudbeckia grandiflora / spp.",
+    "layer": "middle",
+    "color": "yellow",
+    "native": true,
+    "image": "img/plants/rough-coneflower.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "blazing-star",
+    "common": "Blazing star",
+    "scientific": "Liatris spp.",
+    "layer": "middle",
+    "color": "purple",
+    "native": true,
+    "image": "img/plants/blazing-star.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "goldenrod",
+    "common": "Seaside / tall goldenrod",
+    "scientific": "Solidago spp.",
+    "layer": "back",
+    "color": "gold",
+    "native": true,
+    "image": "img/plants/goldenrod.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "fall-aster",
+    "common": "Gulf Coast fall aster",
+    "scientific": "Symphyotrichum spp.",
+    "layer": "middle",
+    "color": "purple",
+    "native": true,
+    "image": "img/plants/fall-aster.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "little-bluestem",
+    "common": "Little bluestem",
+    "scientific": "Schizachyrium scoparium",
+    "layer": "back",
+    "color": "green",
+    "native": true,
+    "image": "img/plants/little-bluestem.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "gulf-muhly",
+    "common": "Gulf muhly",
+    "scientific": "Muhlenbergia capillaris",
+    "layer": "back",
+    "color": "pink",
+    "native": true,
+    "image": "img/plants/gulf-muhly.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "inland-sea-oats",
+    "common": "Inland sea oats",
+    "scientific": "Chasmanthium latifolium",
+    "layer": "middle",
+    "color": "green",
+    "native": true,
+    "image": "img/plants/inland-sea-oats.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "beautyberry",
+    "common": "American beautyberry",
+    "scientific": "Callicarpa americana",
+    "layer": "back",
+    "color": "pink",
+    "native": true,
+    "image": "img/plants/beautyberry.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "yaupon",
+    "common": "Yaupon holly",
+    "scientific": "Ilex vomitoria",
+    "layer": "back",
+    "color": "white",
+    "native": true,
+    "image": "img/plants/yaupon.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "buttonbush",
+    "common": "Buttonbush",
+    "scientific": "Cephalanthus occidentalis",
+    "layer": "back",
+    "color": "white",
+    "native": true,
+    "image": "img/plants/buttonbush.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "coralbean",
+    "common": "Coralbean",
+    "scientific": "Erythrina herbacea",
+    "layer": "back",
+    "color": "red",
+    "native": true,
+    "image": "img/plants/coralbean.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "passionflower",
+    "common": "Purple passionflower",
+    "scientific": "Passiflora incarnata",
+    "layer": "back",
+    "color": "purple",
+    "native": true,
+    "image": "img/plants/passionflower.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "lemon-beebalm",
+    "common": "Lemon beebalm",
+    "scientific": "Monarda citriodora",
+    "layer": "front",
+    "color": "lavender",
+    "native": true,
+    "image": "img/plants/lemon-beebalm.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "spotted-beebalm",
+    "common": "Spotted beebalm",
+    "scientific": "Monarda punctata",
+    "layer": "middle",
+    "color": "pink",
+    "native": true,
+    "image": "img/plants/spotted-beebalm.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "wax-myrtle",
+    "common": "Southern wax myrtle",
+    "scientific": "Morella cerifera",
+    "layer": "back",
+    "color": "green",
+    "native": true,
+    "image": "img/plants/wax-myrtle.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "texas-kidneywood",
+    "common": "Texas kidneywood",
+    "scientific": "Eysenhardtia texana",
+    "layer": "back",
+    "color": "white",
+    "native": true,
+    "image": "img/plants/texas-kidneywood.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "prickly-pear",
+    "common": "Texas prickly pear",
+    "scientific": "Opuntia engelmannii var. lindheimeri / spp.",
+    "layer": "front",
+    "color": "yellow",
+    "native": true,
+    "image": "img/plants/prickly-pear.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "lemongrass",
+    "common": "Lemongrass",
+    "scientific": "Cymbopogon citratus",
+    "layer": "middle",
+    "color": "green",
+    "native": false,
+    "image": "img/plants/lemongrass.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "rosemary",
+    "common": "Rosemary",
+    "scientific": "Salvia rosmarinus",
+    "layer": "middle",
+    "color": "blue",
+    "native": false,
+    "image": "img/plants/rosemary.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "lavender",
+    "common": "Lavender",
+    "scientific": "Lavandula spp.",
+    "layer": "front",
+    "color": "purple",
+    "native": false,
+    "image": "img/plants/lavender.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "society-garlic",
+    "common": "Society garlic",
+    "scientific": "Tulbaghia violacea",
+    "layer": "front",
+    "color": "lavender",
+    "native": false,
+    "image": "img/plants/society-garlic.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "chives",
+    "common": "Chives / garlic chives",
+    "scientific": "Allium schoenoprasum / tuberosum",
+    "layer": "front",
+    "color": "purple",
+    "native": false,
+    "image": "img/plants/chives.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  },
+  {
+    "id": "marigold",
+    "common": "Marigold",
+    "scientific": "Tagetes spp.",
+    "layer": "front",
+    "color": "orange",
+    "native": false,
+    "image": "img/plants/marigold.svg",
+    "image_status": "local placeholder illustration; replace with verified/licensed plant photograph before public release"
+  }
+]

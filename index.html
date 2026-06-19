@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Pollinator Studio V3.0 Static — Houston / Texas Gulf Coast</title>
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<header>
+  <p class="eyebrow">AI-assisted habitat garden design prototype</p>
+  <h1>Pollinator Studio V3.0 <span class="version-badge">hotfix</span></h1>
+  <p class="lede">Houston / Texas Gulf Coast edition. V3.0 Static is a hotfix and code-review cleanup: it keeps the tester interface, fixes multi-goal seeding, adds working empty-result handling, clamps extreme dimensions, bundles local plant-image placeholders, and restores bed-shape-specific layout maps.</p>
+  <p class="prototype-note"><strong>Prototype:</strong> Use this to test the garden-design workflow and recommendation clarity. It is not a certified landscape plan, plant sale list, or pest-control guarantee.</p>
+</header>
+
+<main class="shell">
+  <section class="panel form-panel">
+    <h2>Garden inputs</h2>
+    <div class="grid">
+      <div><label for="zip">ZIP code</label><input id="zip" value="77008" inputmode="numeric"></div>
+      <div><label for="length">Length, feet</label><input id="length" type="number" min="3" max="100" value="14"></div>
+      <div><label for="depth">Depth, feet</label><input id="depth" type="number" min="2" max="50" value="6"></div>
+      <div><label for="sun">Sun exposure</label><select id="sun"><option value="full">Full sun</option><option selected value="part">Part sun</option><option value="shade">Shade</option></select></div>
+      <div><label for="moisture">Soil moisture</label><select id="moisture"><option value="dry">Dry / fast draining</option><option selected value="average">Average</option><option value="wet">Wet / rain garden</option></select></div>
+      <div><label for="soil">Soil texture</label><select id="soil"><option value="unknown">Unknown</option><option selected value="clay">Clay / gumbo</option><option value="loam">Loam</option><option value="sandy">Sandy</option></select></div>
+      <div><label for="condition">Houston micro-site condition</label><select id="condition"><option selected value="standard">Typical Houston yard</option><option value="gumboClay">Gumbo clay / compacted lawn</option><option value="urbanHeat">Urban heat / reflected sun</option><option value="streetHellstrip">Street hellstrip / curb edge</option><option value="rainGarden">Rain garden / swale: catches runoff after rain</option><option value="floodEdge">Flood-prone edge</option><option value="coastalExposure">Coastal wind / salt exposure</option><option value="heavyClay">Heavy clay / slow drainage</option><option value="patioContainer">Patio / container cluster</option><option value="postFreeze">Post-freeze recovery planting</option><option value="hoaFront">HOA-visible front yard</option></select><p class="helper"><strong>Rain garden:</strong> a shallow planted low spot that briefly catches runoff. <strong>Swale:</strong> a shallow planted channel that slows or moves runoff. Neither should be a permanent pond.</p></div>
+      <div class="wide"><label for="layoutType">Planting layout type</label><select id="layoutType"><option selected value="flowerBed">Freestanding flower bed / island bed</option><option value="fenceLine">Along a fence or wall</option><option value="foundation">Foundation bed near house</option><option value="curbStrip">Curb / sidewalk strip</option><option value="patioCluster">Patio / container cluster</option><option value="rainPocket">Rain garden / swale pocket</option></select><p class="helper">This changes the layout diagram, plant placement language, and whether a back fence/support edge is assumed.</p></div>
+      <div class="wide"><label for="bedShape">Bed shape</label><select id="bedShape"><option selected value="oval">Oval / soft island</option><option value="circle">Circle / round bed</option><option value="rectangle">Rectangle / straight-edged bed</option><option value="kidney">Kidney / curved natural bed</option><option value="corner">L-shape / corner bed</option><option value="strip">Narrow strip / ribbon bed</option></select><p class="helper">This changes the top-down diagram and prompt language. Planting layout type still controls whether the bed is freestanding, along a fence, near the house, patio-based, curb-side, or a rain pocket.</p></div>
+      <div class="wide"><label for="mulchDepth">Mulch depth for materials estimate</label><select id="mulchDepth"><option value="2">2 inches — light top-up</option><option selected value="3">3 inches — typical new bed</option><option value="4">4 inches — coarse mulch / heavier suppression</option></select><p class="helper">Used only for the Materials tab. Keep mulch pulled back from crowns, stems, trunks, and the base of small shrubs.</p></div>
+      <div><label for="squirrelMode">Squirrel handling</label><select id="squirrelMode"><option selected value="factor">Factor squirrels into choices</option><option value="ignore">Ignore squirrels</option></select><p class="helper">This changes how strongly fruit, berries, seed heads, and shared wildlife resources are suppressed.</p></div>
+      <div><label for="snakeMode">Snake-aware planting</label><select id="snakeMode"><option selected value="ignore">Do not factor in snakes</option><option value="openBase">Favor open-base plants / reduce hiding cover</option><option value="spikyAromatic">Favor open bases + spiky or aromatic edge candidates</option></select><p class="helper">This does not snake-proof a yard. It shifts the design away from dense low cover and toward visibility, open bases, and optional spiky/aromatic edge candidates.</p></div>
+      <div class="wide"><label id="goalLabel">Habitat goals</label>
+        <div class="goal-checks" role="group" aria-labelledby="goalLabel">
+          <label class="check"><input class="goalCheck" id="goalBees" type="checkbox" value="bees"> Bees</label>
+          <label class="check"><input class="goalCheck" id="goalButterflies" type="checkbox" value="butterflies"> Butterflies</label>
+          <label class="check"><input class="goalCheck" id="goalMonarchs" type="checkbox" value="monarchs"> Monarchs</label>
+          <label class="check"><input class="goalCheck" id="goalHummingbirds" type="checkbox" value="hummingbirds"> Hummingbirds</label>
+          <label class="check"><input class="goalCheck" id="goalCardinals" type="checkbox" value="cardinals"> Cardinals / songbirds</label>
+          <label class="check"><input class="goalCheck" id="goalBiodiversity" type="checkbox" value="biodiversity" checked> Maximum biodiversity</label>
+        </div>
+        <p class="helper">Pick one or more. Maximum biodiversity can be used alone or as a baseline with specific wildlife goals.</p>
+      </div>
+      <div class="wide"><label for="style">Style / yard intent</label><select id="style"><option selected value="tidy">Tidy front-yard native</option><option value="frontCurb">Front-yard curb appeal</option><option value="frontFoundation">Foundation border near house</option><option value="frontEntry">Entry / mailbox pollinator pocket</option><option value="colorful">Colorful cottage border</option><option value="prairie">Pocket coastal prairie</option><option value="backyardHabitat">Backyard habitat room</option><option value="backyardBorder">Back-yard layered border</option><option value="patioView">Patio-view nectar garden</option><option value="wildlife">Wildlife thicket</option><option value="meadow">Loose meadow patch</option></select><p class="helper">Style controls the visual intent and management level. Planting layout type controls the physical shape: flower bed, fence line, foundation bed, curb strip, patio cluster, or rain pocket.</p></div>
+      <div><label for="designMode">Design mode</label><select id="designMode"><option value="beginner">Beginner: compact / lower-risk</option><option selected value="standard">Standard: balanced habitat</option><option value="advanced">Advanced: richer habitat / more management</option></select></div>
+    </div>
+    <fieldset>
+      <legend>Constraints</legend>
+      <label class="check"><input id="nativeOnly" type="checkbox" checked> Native-only palette</label>
+      <label class="check"><input id="petSafe" type="checkbox"> Avoid plants flagged for pet-toxicity review</label>
+      <label class="check"><input id="deer" type="checkbox"> Deer pressure</label>
+      <label class="check"><input id="hoa" type="checkbox" checked> Needs a tidy/front-yard appearance</label>
+      <label class="check"><input id="mosquitoAware" type="checkbox"> Mosquito-aware aromatic edge / seating-zone companion plants</label>
+    </fieldset>
+    <button class="primary" id="generateBtn" type="button">Generate design</button>
+    <div class="button-grid no-print">
+      <button class="secondary" id="resetBtn" type="button">Reset inputs</button>
+      <button class="secondary" id="printBtn" type="button">Print / save PDF</button>
+    </div>
+    <div class="scenario-set no-print">
+      <h3>Sample test scenarios</h3>
+      <p class="helper">Use these to give testers consistent starting points.</p>
+      <button class="secondary" id="sampleFrontBtn" type="button">Houston front yard</button>
+      <button class="secondary" id="sampleBackBtn" type="button">Backyard biodiversity</button>
+      <button class="secondary" id="samplePatioBtn" type="button">Patio hummingbirds</button>
+      <button class="secondary" id="sampleFenceBtn" type="button">Fence-line butterflies</button>
+      <button class="secondary" id="sampleRainBtn" type="button">Rain-garden corner</button>
+      <button class="secondary" id="sampleSnakeBtn" type="button">Snake-aware front bed</button>
+    </div>
+  </section>
+
+  <section class="panel results" id="results">
+    <div class="empty">
+      <h2>No design generated yet</h2>
+      <p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p>
+    </div>
+  </section>
+</main>
+
+  <script src="js/plant-data.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

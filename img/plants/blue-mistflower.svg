@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 360 260" role="img" aria-label="Placeholder reference image for Blue mistflower">
+  <defs>
+    <linearGradient id="bg" x1="0" x2="0" y1="0" y2="1"><stop offset="0" stop-color="#f8f1df"/><stop offset="1" stop-color="#e9dfc9"/></linearGradient>
+  </defs>
+  <rect width="360" height="260" rx="22" fill="url(#bg)"/>
+  <ellipse cx="180" cy="226" rx="132" ry="18" fill="#c9bea4" opacity="0.55"/>
+  <path d="M178 224 C170 188, 170 146, 184 106" stroke="#526b3c" stroke-width="10" fill="none" stroke-linecap="round"/>
+  <path d="M184 124 C132 104, 94 122, 70 156 C122 166, 164 154, 184 124 Z" fill="#76915a" opacity=".9"/>
+  <path d="M184 142 C236 112, 278 128, 310 164 C246 174, 204 164, 184 142 Z" fill="#63814e" opacity=".92"/>
+  <path d="M178 166 C134 158, 108 176, 92 204 C136 208, 166 196, 178 166 Z" fill="#8a9f68" opacity=".92"/>
+  <path d="M184 176 C230 162, 270 178, 294 206 C244 214, 206 202, 184 176 Z" fill="#6f8b56" opacity=".94"/>
+  <g transform="translate(180 86)">
+    <circle r="31" fill="#617eaa" stroke="#5b503e" stroke-width="4"/>
+    <circle cx="-34" cy="2" r="20" fill="#617eaa" opacity=".85"/>
+    <circle cx="34" cy="2" r="20" fill="#617eaa" opacity=".85"/>
+    <circle cx="0" cy="-32" r="20" fill="#617eaa" opacity=".9"/>
+    <circle cx="0" cy="34" r="20" fill="#617eaa" opacity=".9"/>
+    <circle r="9" fill="#3e3428" opacity=".55"/>
+  </g>
+  <rect x="16" y="16" width="328" height="42" rx="14" fill="#fffaf0" opacity=".9"/>
+  <text x="180" y="43" text-anchor="middle" font-family="Arial, sans-serif" font-size="18" font-weight="700" fill="#26331f">Blue mistflower</text>
+  <text x="180" y="246" text-anchor="middle" font-family="Arial, sans-serif" font-size="12" fill="#6c665c">Placeholder illustration — replace with verified photo</text>
+</svg>
