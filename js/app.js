@@ -208,6 +208,7 @@ function generate(){
   let candidates = plants.filter(p => matches(p, inputs));
   if(candidates.length < 6){
     candidates = plants.filter(p =>
+      p.location.some(loc => inputs.locations.includes(loc)) &&
       (!inputs.nativeOnly || p.native) &&
       p.sun.includes(inputs.sun) &&
       p.moist.includes(inputs.moisture) &&
