@@ -3,8 +3,7 @@
 A static, no-build pollinator garden-design website. Open `index.html` in a
 browser — no installation, no server, no build tools.
 
-Current version: **V3.0**. Houston / Texas Gulf Coast edition; national support
-is on the roadmap (see CLAUDE.md).
+Current version: **V4.0**. Two-region prototype: supports ZIP 77429 (Houston / Gulf Coast) and 80906 (Colorado Springs / Front Range). National expansion continues via CLAUDE.md roadmap.
 
 ## Run it
 - **Locally:** double-click `index.html` (Firefox or Chrome), or

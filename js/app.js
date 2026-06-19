@@ -82,11 +82,10 @@ function targetSpeciesCount(area, inputs){
 
 function regionFromZip(zip){
   const z = String(zip).replace(/\D/g, "").slice(0,5);
-  if(/^770/.test(z)) return {name:"Houston urban core",status:"target",locations:["77429"],note:"ZIP appears to be inside Houston; using the V3.0 Static Houston urban Gulf Coast profile."};
-  if(/^(773|774|775)/.test(z)) return {name:"Greater Houston / Upper Texas Coast",status:"target",locations:["77429"],note:"ZIP appears to be in the Greater Houston or upper Texas Coast area; using the Gulf Coast profile."};
-  if(/^(776|777|779)/.test(z)) return {name:"Upper / middle Texas Gulf Coast",status:"target",locations:["77429"],note:"ZIP appears to be in the broader Texas Gulf Coast band; using the Gulf Coast profile."};
-  if(z) return {name:"Outside the Houston-focused prototype",status:"fallback",locations:[],note:"V3.0 Static is Houston/Texas Gulf Coast-focused. This ZIP is accepted, but plant selection still uses the Houston Gulf Coast starter palette."};
-  return {name:"Unknown ZIP",status:"fallback",locations:[],note:"No ZIP was recognized; using Houston Gulf Coast defaults."};
+  if(z === "77429") return {name:"Houston / Cypress, TX",shortName:"Houston / Gulf Coast",status:"target",locations:["77429"],note:"ZIP 77429 — Houston area (Cypress, TX); Gulf Coast native plant palette."};
+  if(z === "80906") return {name:"Colorado Springs / Cheyenne Mtn, CO",shortName:"Colorado Springs / Front Range",status:"target",locations:["80906"],note:"ZIP 80906 — Colorado Springs (Cheyenne Mountain area); Front Range native plant palette."};
+  if(z) return {name:"Unsupported ZIP",shortName:"Unsupported",status:"unsupported",locations:null,note:`ZIP ${z} is not covered yet. This prototype supports 77429 (Houston, TX) and 80906 (Colorado Springs, CO).`};
+  return {name:"Unsupported ZIP",shortName:"Unsupported",status:"unsupported",locations:null,note:"Enter a supported ZIP: 77429 (Houston, TX) or 80906 (Colorado Springs, CO)."};
 }
 
 function conditionMatches(p, inputs, strict){
@@ -100,6 +99,10 @@ function conditionMatches(p, inputs, strict){
   if(c === "patioContainer") return (p.spread[1] <= 48 && p.height[1] <= 72 && !p.aggressive) || p.layer === "front";
   if(c === "postFreeze") return p.native && (p.layer !== "back" || p.tags.includes("shrub") || p.tags.includes("vine") || p.tags.includes("grass") || p.tags.includes("evergreen cover"));
   if(c === "hoaFront") return p.tidy && !p.aggressive && p.height[1] <= 96;
+  if(c === "xeric") return p.conditions.includes("xeric") || p.conditions.includes("highDesert") || p.moist.includes("dry");
+  if(c === "rockGarden") return p.conditions.includes("rockGarden") || p.soil.includes("sandy") || p.moist.includes("dry");
+  if(c === "highDesert") return p.conditions.includes("highDesert") || p.conditions.includes("xeric") || p.moist.includes("dry");
+  if(c === "shadedSite") return p.conditions.includes("shadedSite") || p.sun.includes("part") || p.sun.includes("shade");
   return !strict;
 }
 
@@ -114,10 +117,15 @@ function conditionBonus(p, inputs){
   if(c === "gumboClay" || c === "heavyClay") return p.soil.includes("clay") ? 3 : 1;
   if(c === "postFreeze") return p.tags.includes("grass") || p.tags.includes("overwintering habitat") ? 3 : 1;
   if(c === "coastalExposure") return p.conditions.includes("coastalExposure") ? 4 : 1;
+  if(c === "xeric") return p.moist.includes("dry") ? 3 : 1;
+  if(c === "rockGarden") return (p.conditions.includes("rockGarden") || p.soil.includes("sandy")) ? 3 : 1;
+  if(c === "highDesert") return (p.conditions.includes("highDesert") || p.conditions.includes("xeric")) ? 3 : 1;
+  if(c === "shadedSite") return (p.sun.includes("part") || p.sun.includes("shade")) ? 3 : 1;
   return 1;
 }
 
 function matches(p, inputs){
+  if(inputs.locations === null) return false;
   if(inputs.locations && inputs.locations.length && p.location && p.location.length) {
     if(!p.location.some(loc => inputs.locations.includes(loc))) return false;
   }
@@ -196,9 +204,31 @@ function scorePlant(p, inputs){
   return score;
 }
 
+function renderUnsupportedZip(zip){
+  const z = String(zip).trim();
+  const html = `
+    <div class="generation-notice no-print"><strong>ZIP not supported.</strong></div>
+    <p class="eyebrow">Prototype coverage</p>
+    <h2>${z ? `ZIP ${esc(z)} is not covered yet` : "No ZIP entered"}</h2>
+    <p>This prototype currently supports two areas:</p>
+    <ul style="margin:1rem 0 1rem 1.5rem">
+      <li><strong>77429</strong> — Houston / Cypress, TX (Gulf Coast native plants)</li>
+      <li><strong>80906</strong> — Colorado Springs, CO (Front Range native plants)</li>
+    </ul>
+    <p>Enter one of those ZIPs and click <strong>Generate design</strong>.</p>`;
+  $('results').innerHTML = html;
+  $('results').classList.remove('empty');
+  $('results').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
 function generate(){
   const inputs = readInputs();
   runCount += 1;
+
+  if(inputs.locations === null){
+    renderUnsupportedZip(inputs.zip);
+    return;
+  }
 
   let candidates = plants.filter(p => matches(p, inputs));
   if(candidates.length < 6){
@@ -373,7 +403,7 @@ function renderNoMatches(inputs, reason){
     <div class="info"><strong>How to resolve:</strong> try turning off Native-only temporarily, switch from Beginner to Standard, remove pet/toxicity-review or deer constraints, choose average moisture instead of a specialized micro-site, or select a less restrictive snake/squirrel option.</div>
     <div class="tabs no-print"><button type="button" class="tab active" onclick="PS.showTab('risks')">Warnings</button><button type="button" class="tab" onclick="PS.showTab('region')">Region notes</button><button type="button" class="tab" onclick="PS.showTab('test')">Test this app</button></div>
     <section id="tab-risks" class="tab-view active"><h3>Why no design appeared</h3><p>The hard filters eliminated the available starter plant records. This is preferable to showing a misleading score or a zero-plant design.</p><ul class="why-list"><li>Reduce one constraint at a time so the tester can see which filter is excluding the palette.</li><li>For production, this state should become less common as the plant database grows.</li></ul></section>
-    <section id="tab-region" class="tab-view"><h3>Prototype data limit</h3><p>Pollinator Studio V3.0 Static still uses a starter Houston/Texas Gulf Coast plant list. A production version should use a larger source-verified plant database.</p></section>
+    <section id="tab-region" class="tab-view"><h3>Prototype data limit</h3><p>Pollinator Studio V4.0 uses region-specific starter plant sets (77429: Gulf Coast; 80906: Front Range). A production version should use a larger source-verified plant database.</p></section>
     <section id="tab-test" class="tab-view">${renderTesting(inputs)}</section>`;
   $('results').innerHTML = html;
   $('results').classList.remove('empty');
@@ -384,7 +414,7 @@ function render(inputs, palette, score){
   const totalPlants = palette.reduce((s,p)=>s+p.qty,0);
   const region = regionFromZip(inputs.zip);
   const mode = designModeSettings(inputs.designMode);
-  const title = `${mode.label} ${cap(inputs.style)} ${region.status === "target" ? "Houston Gulf Coast" : "Gulf Coast Prototype"} ${goalTitle(inputs)} ${layoutTitle(inputs.layoutType)}`;
+  const title = `${mode.label} ${cap(inputs.style)} ${region.shortName || region.name} ${goalTitle(inputs)} ${layoutTitle(inputs.layoutType)}`;
   const warnings = [];
   palette.forEach(p => {
     if(p.pet) warnings.push(`${p.common} is flagged for toxicity review if pets or children browse plants.`);
@@ -440,7 +470,7 @@ function render(inputs, palette, score){
     <div id="tab-prompt" class="tab-view">${renderPrompt(inputs, palette, region)}</div>
     <div id="tab-test" class="tab-view">${renderTesting(inputs)}</div>
     <div id="tab-changelog" class="tab-view">${renderChangelog()}</div>
-    <p class="muted"><strong>Prototype note:</strong> V3.0 Static uses a starter Houston/Texas Gulf Coast data set with prototype planting, establishment, layout, and export guidance. Plant suitability, cultivar behavior, toxicity, local native range, and nursery availability still need expert/source validation before production use.</p>
+    <p class="muted"><strong>Prototype note:</strong> V4.0 uses region-specific starter data sets for 77429 (Houston / Gulf Coast) and 80906 (Colorado Springs / Front Range). Plant suitability, cultivar behavior, toxicity, local native range, and nursery availability still need expert/source validation before production use.</p>
   `;
   $("results").innerHTML = html;
   const resultsEl = $("results");
@@ -739,7 +769,7 @@ function renderDataQA(inputs, palette){
     return `<tr><td><strong>${esc(p.common)}</strong><br><span class="sciname">${esc(p.sci)}</span></td><td><span class="chip ${f.cls}">${esc(f.label)}</span><br>${f.reasons.map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</td><td><strong>${esc(d.overall)}</strong><br>${d.cautions.map(c=>`<span class="chip ${c.includes("caution")||c.includes("toxicity")||c.includes("spread")?"red":""}">${esc(c)}</span>`).join("")}</td><td>${esc(d.specificity)}<br><span class="muted">${esc(d.source)}</span></td></tr>`;
   }).join("");
   const excludedRows = excluded.map(x=>`<tr><td><strong>${esc(x.p.common)}</strong><br><span class="sciname">${esc(x.p.sci)}</span></td><td>${x.reasons.slice(0,5).map(r=>`<span class="chip fit-excluded">${esc(r)}</span>`).join("")}</td><td>${esc(topRoles(x.p))}</td></tr>`).join("");
-  return `<div class="info"><strong>V3.0 Static data QA:</strong> this tab makes the prototype's confidence limits visible. It is not a fully sourced plant database yet; it shows which records are solid starter candidates, which need exact species/local nursery verification, and why some candidates were excluded.</div>
+  return `<div class="info"><strong>V4.0 data QA:</strong> this tab makes the prototype's confidence limits visible. It is not a fully sourced plant database yet; it shows which records are solid starter candidates, which need exact species/local nursery verification, and why some candidates were excluded.</div>
   <div class="qa-grid">
     <div class="qa-card"><strong>${palette.length}</strong><span class="muted">selected species</span></div>
     <div class="qa-card"><strong>${high}/${palette.length}</strong><span class="muted">higher-confidence starter records</span></div>
@@ -768,8 +798,8 @@ function renderCarePlan(inputs, palette){
     ${renderListCard("Mulch and weed control", mulchPlan(inputs))}
     ${renderListCard("Pruning / cutback", pruningPlan(inputs, palette))}
     ${renderListCard("Intentional habitat cues", messyCues(inputs, palette))}
-    ${renderListCard("Common Houston failure warnings", failureWarnings(inputs, palette), "logic-card caution")}
-  </div><p class="muted">This is design-adjacent establishment guidance. V3.0 Static does not create reminders, journals, or care logs.</p>`;
+    ${renderListCard("Common planting failure warnings", failureWarnings(inputs, palette), "logic-card caution")}
+  </div><p class="muted">This is design-adjacent establishment guidance. V4.0 does not create reminders, journals, or care logs.</p>`;
 }
 
 function renderPalette(palette, inputs){
@@ -1288,7 +1318,7 @@ function renderWhy(inputs, palette, score, region){
   const hummingbird = palette.filter(p=>p.roles.hummingbirds >= 8 || p.tags.includes("hummingbirds")).map(p=>p.common);
   const birds = palette.filter(p=>p.roles.cardinals >= 6 || p.tags.includes("berries") || p.tags.includes("seed heads") || p.tags.includes("cover")).map(p=>p.common);
   const filtered = [];
-  filtered.push(`ZIP ${inputs.zip} was read as ${region.name}; plant data stayed in the Houston/Texas Gulf Coast prototype profile.`);
+  filtered.push(`ZIP ${inputs.zip} read as ${region.name}; using the ${region.shortName || region.name} native plant set.`);
   filtered.push(`Selected habitat goals: ${goalListText(inputs)}.`);
   filtered.push(`Site filters required ${siteLabel(inputs.sun)}, ${moistureLabel(inputs.moisture)} moisture, ${soilLabel(inputs.soil)}, and ${conditionLabel(inputs.condition)} compatibility.`);
   filtered.push(`Planting layout type was set to ${layoutTypeLabel(inputs.layoutType)}, so placement language and layout zones do not assume a fence unless fence-line planting is selected. Style intent was set to ${styleLabel(inputs.style).toLowerCase()}, which changes plant preference and curb-appeal/wildlife tradeoffs.`);
@@ -1325,7 +1355,7 @@ function renderWhy(inputs, palette, score, region){
   </div>`;
 }
 
-function scoreRowDetails(score){
+function scoreRowDetails(score, inputs){
   return [
     {
       label:"Bloom continuity", val:score.bloomContinuity, max:25,
@@ -1335,7 +1365,7 @@ function scoreRowDetails(score){
     {
       label:"Native density", val:score.nativeDensity, max:20,
       meaning:"Measures how much of the palette is native or locally appropriate in this prototype dataset.",
-      improve:"Keep Native-only on, or replace non-native/aromatic add-on plants with source-verified Gulf Coast natives."
+      improve:"Keep Native-only on, or replace non-native or companion plants with source-verified local natives."
     },
     {
       label:"Host plant support", val:score.hostSupport, max:20,
@@ -1353,9 +1383,9 @@ function scoreRowDetails(score){
       improve:"Add at least one structural grass, shrub, vine/support plant, or taller perennial if the bed has only low/mid plants."
     },
     {
-      label:"Gulf Coast site fit", val:score.siteFit, max:10,
-      meaning:"Measures whether the selected plants match the sun, moisture, soil, and Houston micro-site condition.",
-      improve:"Change the site inputs to match the real bed, or use substitutions that better fit clay, drought, wet pockets, heat edges, or containers."
+      label:"Micro-site fit", val:score.siteFit, max:10,
+      meaning:"Measures whether the selected plants match the sun, moisture, soil, and regional micro-site condition.",
+      improve:"Change the site inputs to match the real bed, or use substitutions that better fit the selected condition."
     },
     {
       label:"Seasonal balance bonus", val:score.seasonalBalance, max:10,
@@ -1367,7 +1397,7 @@ function scoreRowDetails(score){
 
 function renderScore(score, inputs, palette){
   const deg = Math.round(score.total/100*360);
-  const rows = scoreRowDetails(score);
+  const rows = scoreRowDetails(score, inputs);
   const detailCards = rows.map(r=>`<article class="logic-card"><h3>${esc(r.label)}</h3><p><strong>Score:</strong> ${r.val}/${r.max}</p><p><strong>What it means:</strong> ${esc(r.meaning)}</p><p><strong>How to improve:</strong> ${esc(r.improve)}</p></article>`).join("");
   const weak = rows.filter(r => r.val / r.max < .65).map(r=>r.label);
   return `<div class="score-wrap">
@@ -1387,7 +1417,7 @@ function renderRegionNotes(inputs, palette, region){
     <div class="metric"><strong>${late}</strong><span class="muted">species with Sep–Nov bloom</span></div>
     <div class="metric"><strong>${wet}</strong><span class="muted">species tolerant of wet/average sites</span></div>
   </div>
-  <p><strong>Houston logic in V3.0 Static:</strong> prioritize local natives, layered habitat, long bloom continuity, seasonal spring/summer/fall balance, wet-clay tolerance where selected, fall nectar for migration, and bird-supporting structure without turning the app into a tracker, journal, or recurring planner.</p>
+  <p><strong>Design logic in V4.0:</strong> prioritize locally sourced natives, layered habitat, long bloom continuity, seasonal spring/summer/fall balance, micro-site condition matching, regional nectar continuity, and bird-supporting structure without turning the app into a tracker, journal, or recurring planner.</p>
   <p><strong>Multi-goal behavior:</strong> checkbox goals are combined. Bees + butterflies, for example, boosts both high pollen/nectar plants and butterfly nectar/host plants rather than forcing one primary goal.</p>
   <p><strong>Squirrel-aware behavior:</strong> squirrel-aware mode suppresses the highest berry/fruit wildlife plants unless the user explicitly selects cardinals/songbirds. It does not promise squirrel exclusion.</p>
   <p><strong>Mosquito-aware behavior:</strong> the add-on places aromatic, pollinator-compatible plants near patios or edges for human comfort. It does not claim that plants growing in the bed will materially reduce mosquito bites.</p>
@@ -1395,6 +1425,17 @@ function renderRegionNotes(inputs, palette, region){
   <p><strong>Woody/vine count:</strong> ${woody} selected species are shrubs, vines, or evergreen/cover structure. This helps birds but should be scaled carefully in small beds.</p>
   <h3>Validation sources to keep attached to this prototype</h3>
   <div class="source-list">
+    ${(region.locations && region.locations[0] === "80906") ? `
+    <a href="https://conps.org/" target="_blank" rel="noopener">Colorado Native Plant Society — statewide native plant resources</a>
+    <a href="https://plantselect.org/" target="_blank" rel="noopener">Plant Select — vetted plants for Colorado and the Intermountain West</a>
+    <a href="https://extension.colostate.edu/topic-areas/yard-garden/" target="_blank" rel="noopener">CSU Extension — Front Range yard and garden guidance</a>
+    <a href="https://www.botanicgardens.org/" target="_blank" rel="noopener">Denver Botanic Gardens — Colorado native plant resources and trials</a>
+    <a href="https://www.wildflower.org/collections/" target="_blank" rel="noopener">Lady Bird Johnson Wildflower Center — native plant database including Colorado</a>
+    <a href="https://xerces.org/pollinator-conservation/pollinator-friendly-plant-lists" target="_blank" rel="noopener">Xerces Society — pollinator-friendly native plant lists by region</a>
+    <a href="https://hgic.clemson.edu/can-plants-repel-problematic-insects/" target="_blank" rel="noopener">Clemson HGIC — limits of mosquito-repellent plant claims</a>
+    <a href="https://extension.usu.edu/news_sections/gardening/12-ways-to-stop-snakes-from-slithering-into-yards" target="_blank" rel="noopener">Utah State University Extension — reduce hiding cover near foundations</a>
+    <a href="https://hgic.clemson.edu/factsheet/planting-shrubs-correctly/" target="_blank" rel="noopener">Clemson HGIC — shrub planting and first-year root-ball watering</a>
+    ` : `
     <a href="https://houstonaudubon.org/conservation/bfc/nativeplants/basics.html" target="_blank" rel="noopener">Houston Audubon — native plant basics and layered bird habitat</a>
     <a href="https://houstonaudubon.org/conservation/bfc/nativeplants/bestplants.html" target="_blank" rel="noopener">Houston Audubon — best plants for a bird-friendly landscape</a>
     <a href="https://houstonaudubon.org/programs/learn/hummingbirds.html" target="_blank" rel="noopener">Houston Audubon — hummingbirds of Houston</a>
@@ -1409,6 +1450,7 @@ function renderRegionNotes(inputs, palette, region){
     <a href="https://aggie-horticulture.tamu.edu/earthkind/landscape/planting-a-tree/" target="_blank" rel="noopener">Texas A&amp;M Aggie Horticulture — planting hole width and depth guidance</a>
     <a href="https://hgic.clemson.edu/factsheet/planting-shrubs-correctly/" target="_blank" rel="noopener">Clemson HGIC — shrub planting and first-year root-ball watering</a>
     <a href="https://gardeningsolutions.ifas.ufl.edu/care/planting/planting-shrubs/" target="_blank" rel="noopener">UF/IFAS Gardening Solutions — establishing shrubs after planting</a>
+    `}
   </div>`;
 }
 
@@ -1419,24 +1461,32 @@ function promptText(inputs, palette, region){
   const season = palette.some(p=>p.bloom.includes(10) || p.bloom.includes(11)) ? "early fall, with late-season nectar still in bloom" : "late spring to early summer peak bloom";
   const wildlife = wildlifePhrase(inputs);
   const extras = goalExtraPhrase(inputs);
-  const neighborhood = region.status === "target" ? "Houston residential neighborhood, warm humid Gulf Coast light, brick or bungalow context optional" : "Texas Gulf Coast residential setting";
+  const isCoSprings = region.locations && region.locations[0] === "80906";
+  const regionDesc = isCoSprings
+    ? "Colorado Springs / Front Range residential setting, semi-arid, rocky mountain foothills backdrop optional, clear dry-sky light"
+    : "Houston residential neighborhood, warm humid Gulf Coast light, brick or bungalow context optional";
+  const midDefault = isCoSprings ? "native Front Range perennials" : "flowering native Gulf Coast perennials";
+  const densityNote = isCoSprings ? "realistic Front Range dry-garden density" : "realistic Gulf Coast density";
+  const negativeNote = isCoSprings
+    ? "No tropical plants, no lush humid jungle planting, no bird feeders, no cartoon style, no impossible plant scale, no invasive nursery exotics as focal plants."
+    : "No Midwest prairie backdrop, no desert cactus garden, no tropical resort planting, no bird feeders, no cartoon style, no impossible plant scale, no invasive nursery exotics as focal plants.";
   const layout = layoutProfile(inputs);
   return `PHOTO PROMPT
-Realistic mature garden photograph, eye-level 35mm lens, ${season}. A ${inputs.length} by ${inputs.depth} foot ${styleLabel(inputs.style).toLowerCase()} Houston / Texas Gulf Coast ${layoutTypeLabel(inputs.layoutType)} in ${siteLabel(inputs.sun)}. ${neighborhood}. Naturalistic but intentional; not overgrown, not a fantasy illustration.
+Realistic mature garden photograph, eye-level 35mm lens, ${season}. A ${inputs.length} by ${inputs.depth} foot ${styleLabel(inputs.style).toLowerCase()} ${region.shortName || region.name} ${layoutTypeLabel(inputs.layoutType)} in ${siteLabel(inputs.sun)}. ${regionDesc}. Naturalistic but intentional; not overgrown, not a fantasy illustration.
 
 SITE AND DESIGN
 Region: ${region.name}. Micro-site: ${conditionLabel(inputs.condition)}. Planting layout type: ${layoutTypeLabel(inputs.layoutType)}. Layout cue: ${layout.upperLabel}; ${layout.lowerLabel}. Soil: ${soilLabel(inputs.soil)}. Moisture: ${moistureLabel(inputs.moisture)}. Design goals: ${goalListText(inputs)}. Design mode: ${designModeSettings(inputs.designMode).label}. ${extras}.
 
 PLANTING STRUCTURE
 Back layer: ${back || "compact native shrubs, grasses, and vines"}.
-Middle layer: ${mid || "flowering Texas Gulf Coast native perennials"}.
+Middle layer: ${mid || midDefault}.
 Front layer: ${front || "low native edging plants and groundcovers"}.
 
 WILDLIFE AND DETAILS
-Include ${wildlife}. Show layered heights, repeated plant drifts, visible mulch/access edge, healthy foliage, realistic Gulf Coast density, and clear front-to-back structure.
+Include ${wildlife}. Show layered heights, repeated plant drifts, visible mulch/access edge, healthy foliage, ${densityNote}, and clear front-to-back structure.
 
 NEGATIVE PROMPT
-No Midwest prairie backdrop, no desert cactus garden, no tropical resort planting, no bird feeders, no cartoon style, no impossible plant scale, no invasive nursery exotics as focal plants.`;
+${negativeNote}`;
 }
 
 function uploadedPhotoPromptText(inputs, palette, region){
@@ -1447,13 +1497,13 @@ function uploadedPhotoPromptText(inputs, palette, region){
 Upload the actual garden, yard, patio, fence-line, or planting-bed photo first. Use that uploaded photo as the base image. Do not invent a different house or yard.
 
 EDIT INSTRUCTIONS
-Apply this Pollinator Studio planting concept inside the visible planting area only. Preserve the original camera angle, house, fence, driveway, sidewalk, patio, existing trees, doors, windows, roofline, utility boxes, hardscape, lawn edges, shadows, and overall scale. Keep the result realistic for a Houston / Texas Gulf Coast residential landscape.
+Apply this Pollinator Studio planting concept inside the visible planting area only. Preserve the original camera angle, house, fence, driveway, sidewalk, patio, existing trees, doors, windows, roofline, utility boxes, hardscape, lawn edges, shadows, and overall scale. Keep the result realistic for a ${region.shortName || region.name} residential landscape.
 
 BED AND LAYOUT
 Bed size: ${inputs.length} by ${inputs.depth} ft. Bed shape: ${bedShapeLabel(inputs.bedShape)}. Planting area type: ${layoutTypeLabel(inputs.layoutType)}. Use the map concept as a guide: ${layout.upperLabel}; ${layout.lowerLabel}. Region: ${region.name}. Sun: ${siteLabel(inputs.sun)}. Soil: ${soilLabel(inputs.soil)}. Moisture: ${moistureLabel(inputs.moisture)}. Micro-site: ${conditionLabel(inputs.condition)}.
 
 PLANTS TO REPRESENT
-Show realistic groupings of: ${plantNames || "Houston/Texas Gulf Coast native pollinator plants"}.
+Show realistic groupings of: ${plantNames || `${region.shortName || region.name} native pollinator plants`}.
 
 DESIGN GOALS
 ${goalListText(inputs)}. Make the planting look intentional, layered, and maintainable. Keep plant sizes believable and keep access edges clear.
@@ -1524,7 +1574,7 @@ ${scenarioSummaryText(inputs)}
 Questions
 1. What was confusing or unclear?
 2. Did the app clearly show whether this was a freestanding bed, fence-line bed, foundation bed, curb strip, patio cluster, or rain pocket?
-3. Did the plant recommendations feel realistic for Houston / the Texas Gulf Coast?
+3. Did the plant recommendations feel realistic for the entered ZIP and region?
 4. Would you know what to buy from the nursery list and plant cards?
 5. Would you know where to plant things from the layout and placement guidance?
 6. Did any safety or wildlife setting feel odd, misleading, or unnecessary?
@@ -1536,7 +1586,7 @@ function renderTesting(inputs){
   const questions = [
     ["Clarity", "What was confusing, too technical, or hard to find?"],
     ["Yard fit", "Did the layout type and style match the kind of front yard, back yard, fence line, patio, or rain pocket you had in mind?"],
-    ["Plant realism", "Did the plant recommendations seem like something a Houston-area nursery, native plant sale, or gardener would recognize?"],
+    ["Plant realism", "Did the plant recommendations seem like something a nursery, native plant sale, or gardener in your area would recognize?"],
     ["Actionability", "After reading the plant cards, nursery list, layout, and planting notes, would you know what to buy and where to plant it?"],
     ["Trust", "Did the confidence labels, cautions, mosquito wording, squirrel handling, or snake-aware planting language make the app feel more or less trustworthy?"],
     ["Missing pieces", "What did you expect the app to ask, explain, or show that it did not?"],
@@ -1557,6 +1607,8 @@ function renderTesting(inputs){
 
 function renderChangelog(){
   const changes = [
+    ["V4.0", "Two-region prototype: adds Colorado Springs / Front Range (80906) native plant set alongside Houston / Gulf Coast (77429). ZIP input now validates strictly — unsupported ZIPs show a friendly message instead of showing all plants. Condition dropdown updates dynamically when ZIP changes. Houston-specific wording generalized throughout."],
+    ["V3.0 Static", "Import working single-file build, split into styles.css + js/plant-data.js + js/app.js; Steps 2 and 3 of national expansion: add location:[] tags to all plant records and wire geographic filtering through regionFromZip()/matches()."],
     ["V2.7 Static", "Stability pass: verifies major tabs and restored features, fixes stale version text, restores uploaded-photo edit prompt, keeps print/save PDF working from downloaded local files, and documents the current stable tester build."],
     ["V2.5 Static", "Fixes the UI layout so Garden inputs sit above full-width generated results while preserving the restored planting map, score explanations, uploaded-photo prompt, backup choices, and materials calculator. Corrected spacing language so exact center-to-center inches appear in the Layout tab."],
     ["V2.4 Static", "Regression-fix release that restored the full numbered planting map, score explanations with fix suggestions, and uploaded-photo edit prompt."],
@@ -1578,6 +1630,43 @@ function renderChangelog(){
 }
 
 
+const regionConditions = {
+  "77429": [
+    {value:"standard",label:"Standard Houston yard"},
+    {value:"gumboClay",label:"Gumbo clay / compacted lawn"},
+    {value:"urbanHeat",label:"Urban heat / reflected sun"},
+    {value:"streetHellstrip",label:"Street hellstrip / curb edge"},
+    {value:"rainGarden",label:"Rain garden / swale: catches runoff after rain"},
+    {value:"floodEdge",label:"Flood-prone edge"},
+    {value:"coastalExposure",label:"Coastal wind / salt exposure"},
+    {value:"heavyClay",label:"Heavy clay / slow drainage"},
+    {value:"patioContainer",label:"Patio / container cluster"},
+    {value:"postFreeze",label:"Post-freeze recovery planting"},
+    {value:"hoaFront",label:"HOA-visible front yard"}
+  ],
+  "80906": [
+    {value:"xeric",label:"Xeric / drought-adapted"},
+    {value:"standard",label:"Standard Colorado yard"},
+    {value:"rockGarden",label:"Rock garden / excellent drainage"},
+    {value:"highDesert",label:"High desert / rocky / alkaline"},
+    {value:"shadedSite",label:"Shaded site / north-facing"},
+    {value:"urbanHeat",label:"Urban heat / reflected pavement"},
+    {value:"patioContainer",label:"Patio / container cluster"},
+    {value:"hoaFront",label:"HOA-visible front yard"}
+  ]
+};
+
+function updateConditionDropdown(zip){
+  const z = String(zip).replace(/\D/g, "").slice(0,5);
+  const conditions = regionConditions[z];
+  const sel = $("condition");
+  if(!sel || !conditions) return;
+  const current = sel.value;
+  sel.innerHTML = conditions.map(o=>`<option value="${esc(o.value)}">${esc(o.label)}</option>`).join("");
+  if(conditions.some(o=>o.value === current)) sel.value = current;
+  else sel.value = conditions[0].value;
+}
+
 function showTab(name){
   const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", substitutions:"Substitutions", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.textContent === match));
@@ -1598,11 +1687,12 @@ function goalTitle(inputs){
   return goals.map(g=>goalNames[g] || goalLabel(g)).join(" + ");
 }
 function wildlifePhrase(inputs){
+  const isCO = inputs.locations && inputs.locations[0] === "80906";
   const parts = [];
   if(hasGoal(inputs,"bees")) parts.push("native bees visible on small clustered flowers");
-  if(hasGoal(inputs,"butterflies")) parts.push("several Gulf Coast butterflies visiting nectar flowers");
+  if(hasGoal(inputs,"butterflies")) parts.push(isCO ? "several Front Range butterflies visiting nectar flowers" : "several Gulf Coast butterflies visiting nectar flowers");
   if(hasGoal(inputs,"monarchs")) parts.push("one monarch butterfly near native milkweed and fall nectar");
-  if(hasGoal(inputs,"hummingbirds")) parts.push("one ruby-throated hummingbird visiting red tubular flowers");
+  if(hasGoal(inputs,"hummingbirds")) parts.push(isCO ? "one broad-tailed hummingbird visiting tubular flowers" : "one ruby-throated hummingbird visiting red tubular flowers");
   if(hasGoal(inputs,"cardinals")) parts.push("one northern cardinal perched near dense cover, no feeder, no loose seed");
   if(!parts.length || hasGoal(inputs,"biodiversity")) parts.push("native bees, butterflies, one monarch, one hummingbird, and songbirds implied by cover");
   return unique(parts).join("; ");
@@ -1611,8 +1701,8 @@ function goalExtraPhrase(inputs){
   const parts = [];
   if(hasGoal(inputs,"bees")) parts.push("bee-forward pollen and nectar continuity");
   if(hasGoal(inputs,"butterflies")) parts.push("butterfly nectar and host-plant support");
-  if(hasGoal(inputs,"monarchs")) parts.push("native milkweed host plants plus abundant late-season nectar for Texas migration");
-  if(hasGoal(inputs,"hummingbirds")) parts.push("red tubular flowers and hummingbird-friendly Gulf Coast natives");
+  if(hasGoal(inputs,"monarchs")) parts.push("native milkweed host plants plus abundant late-season nectar for migration corridors");
+  if(hasGoal(inputs,"hummingbirds")) parts.push("tubular flowers and hummingbird-friendly regional natives");
   if(hasGoal(inputs,"cardinals")) parts.push("songbird habitat with seed heads, berries where appropriate, evergreen or dense cover, and no loose birdseed");
   if(hasGoal(inputs,"biodiversity") || !parts.length) parts.push("high biodiversity habitat with native bees, butterflies, monarch host plants, hummingbirds, songbirds, fall nectar, seed heads, and overwintering structure");
   if(inputs.mosquitoAware) parts.push("an aromatic seating-edge companion strip treated as a comfort cue, not mosquito control");
@@ -1662,7 +1752,7 @@ function isBackYardStyle(s){ return ["backyardHabitat","backyardBorder","wildlif
 function siteLabel(sun){return sun === "full" ? "full-sun" : sun === "part" ? "part-sun" : "shade";}
 function moistureLabel(m){return {dry:"dry / fast-draining", average:"average", wet:"wet / rain-garden"}[m] || m;}
 function soilLabel(s){return {unknown:"unknown soil", clay:"clay / gumbo", loam:"loam", sandy:"sandy"}[s] || s;}
-function conditionLabel(c){return {standard:"typical Houston yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard"}[c] || c;}
+function conditionLabel(c){return {standard:"standard yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard", xeric:"xeric / drought-adapted", rockGarden:"rock garden / excellent drainage", highDesert:"high desert / rocky / alkaline", shadedSite:"shaded site / north-facing"}[c] || c;}
 function goalLabel(goal){
   return {bees:"Bee Pollinator", butterflies:"Butterfly Pollinator", monarchs:"Monarch Habitat", hummingbirds:"Hummingbird Nectar", cardinals:"Cardinal / Songbird Habitat", biodiversity:"Maximum Biodiversity"}[goal] || "Habitat";
 }
@@ -1679,7 +1769,7 @@ function setGoalChecks(goals){
 
 function setSample(goals, style, sun="part", moisture="average", condition="standard", length=14, depth=6, mosquitoAware=false, layoutType="flowerBed", bedShape="oval"){
   const list = Array.isArray(goals) ? goals : [goals];
-  $("zip").value = "77008";
+  $("zip").value = "77429";
   $("length").value = length;
   $("depth").value = depth;
   $("sun").value = sun;
@@ -1698,12 +1788,13 @@ function setSample(goals, style, sun="part", moisture="average", condition="stan
   $("hoa").checked = !list.includes("cardinals") && isFrontYardStyle(style);
   $("mosquitoAware").checked = mosquitoAware;
   if($("snakeMode")) $("snakeMode").value = "ignore";
+  updateConditionDropdown($("zip").value);
   generate();
 }
 
 
 function resetInputs(){
-  $("zip").value = "77008";
+  $("zip").value = "77429";
   $("length").value = 14;
   $("depth").value = 6;
   $("sun").value = "part";
@@ -1723,6 +1814,7 @@ function resetInputs(){
   $("hoa").checked = true;
   $("mosquitoAware").checked = false;
   $("snakeMode").value = "ignore";
+  updateConditionDropdown("77429");
   $("results").innerHTML = `<div class="empty"><h2>No design generated yet</h2><p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p></div>`;
 }
 
@@ -1764,6 +1856,8 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
+$("zip").addEventListener("blur", () => updateConditionDropdown($("zip").value));
+$("zip").addEventListener("change", () => updateConditionDropdown($("zip").value));
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
 $("printBtn").addEventListener("click", printDesignSheet);

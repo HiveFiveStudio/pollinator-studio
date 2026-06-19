@@ -3,14 +3,14 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>Pollinator Studio V3.0 Static — Houston / Texas Gulf Coast</title>
+<title>Pollinator Studio V4.0 — Multi-Region Prototype</title>
 <link rel="stylesheet" href="styles.css">
 </head>
 <body>
 <header>
   <p class="eyebrow">AI-assisted habitat garden design prototype</p>
-  <h1>Pollinator Studio V3.0 <span class="version-badge">hotfix</span></h1>
-  <p class="lede">Houston / Texas Gulf Coast edition. V3.0 Static is a hotfix and code-review cleanup: it keeps the tester interface, fixes multi-goal seeding, adds working empty-result handling, clamps extreme dimensions, bundles local plant-image placeholders, and restores bed-shape-specific layout maps.</p>
+  <h1>Pollinator Studio V4.0 <span class="version-badge">two-region</span></h1>
+  <p class="lede">Multi-region prototype — supports ZIP 77429 (Houston / Gulf Coast) and 80906 (Colorado Springs / Front Range). Enter a supported ZIP to get a region-specific native plant palette; the micro-site condition menu updates automatically per region.</p>
   <p class="prototype-note"><strong>Prototype:</strong> Use this to test the garden-design workflow and recommendation clarity. It is not a certified landscape plan, plant sale list, or pest-control guarantee.</p>
 </header>
 
@@ -18,13 +18,13 @@
   <section class="panel form-panel">
     <h2>Garden inputs</h2>
     <div class="grid">
-      <div><label for="zip">ZIP code</label><input id="zip" value="77008" inputmode="numeric"></div>
+      <div><label for="zip">ZIP code</label><input id="zip" value="77429" inputmode="numeric" placeholder="77429 or 80906"></div>
       <div><label for="length">Length, feet</label><input id="length" type="number" min="3" max="100" value="14"></div>
       <div><label for="depth">Depth, feet</label><input id="depth" type="number" min="2" max="50" value="6"></div>
       <div><label for="sun">Sun exposure</label><select id="sun"><option value="full">Full sun</option><option selected value="part">Part sun</option><option value="shade">Shade</option></select></div>
       <div><label for="moisture">Soil moisture</label><select id="moisture"><option value="dry">Dry / fast draining</option><option selected value="average">Average</option><option value="wet">Wet / rain garden</option></select></div>
       <div><label for="soil">Soil texture</label><select id="soil"><option value="unknown">Unknown</option><option selected value="clay">Clay / gumbo</option><option value="loam">Loam</option><option value="sandy">Sandy</option></select></div>
-      <div><label for="condition">Houston micro-site condition</label><select id="condition"><option selected value="standard">Typical Houston yard</option><option value="gumboClay">Gumbo clay / compacted lawn</option><option value="urbanHeat">Urban heat / reflected sun</option><option value="streetHellstrip">Street hellstrip / curb edge</option><option value="rainGarden">Rain garden / swale: catches runoff after rain</option><option value="floodEdge">Flood-prone edge</option><option value="coastalExposure">Coastal wind / salt exposure</option><option value="heavyClay">Heavy clay / slow drainage</option><option value="patioContainer">Patio / container cluster</option><option value="postFreeze">Post-freeze recovery planting</option><option value="hoaFront">HOA-visible front yard</option></select><p class="helper"><strong>Rain garden:</strong> a shallow planted low spot that briefly catches runoff. <strong>Swale:</strong> a shallow planted channel that slows or moves runoff. Neither should be a permanent pond.</p></div>
+      <div><label for="condition">Micro-site condition</label><select id="condition"><option selected value="standard">Standard Houston yard</option><option value="gumboClay">Gumbo clay / compacted lawn</option><option value="urbanHeat">Urban heat / reflected sun</option><option value="streetHellstrip">Street hellstrip / curb edge</option><option value="rainGarden">Rain garden / swale: catches runoff after rain</option><option value="floodEdge">Flood-prone edge</option><option value="coastalExposure">Coastal wind / salt exposure</option><option value="heavyClay">Heavy clay / slow drainage</option><option value="patioContainer">Patio / container cluster</option><option value="postFreeze">Post-freeze recovery planting</option><option value="hoaFront">HOA-visible front yard</option></select><p class="helper" id="conditionHelper"><strong>Rain garden:</strong> a shallow planted low spot that briefly catches runoff. <strong>Swale:</strong> a shallow planted channel that slows or moves runoff. Neither should be a permanent pond.</p></div>
       <div class="wide"><label for="layoutType">Planting layout type</label><select id="layoutType"><option selected value="flowerBed">Freestanding flower bed / island bed</option><option value="fenceLine">Along a fence or wall</option><option value="foundation">Foundation bed near house</option><option value="curbStrip">Curb / sidewalk strip</option><option value="patioCluster">Patio / container cluster</option><option value="rainPocket">Rain garden / swale pocket</option></select><p class="helper">This changes the layout diagram, plant placement language, and whether a back fence/support edge is assumed.</p></div>
       <div class="wide"><label for="bedShape">Bed shape</label><select id="bedShape"><option selected value="oval">Oval / soft island</option><option value="circle">Circle / round bed</option><option value="rectangle">Rectangle / straight-edged bed</option><option value="kidney">Kidney / curved natural bed</option><option value="corner">L-shape / corner bed</option><option value="strip">Narrow strip / ribbon bed</option></select><p class="helper">This changes the top-down diagram and prompt language. Planting layout type still controls whether the bed is freestanding, along a fence, near the house, patio-based, curb-side, or a rain pocket.</p></div>
       <div class="wide"><label for="mulchDepth">Mulch depth for materials estimate</label><select id="mulchDepth"><option value="2">2 inches — light top-up</option><option selected value="3">3 inches — typical new bed</option><option value="4">4 inches — coarse mulch / heavier suppression</option></select><p class="helper">Used only for the Materials tab. Keep mulch pulled back from crowns, stems, trunks, and the base of small shrubs.</p></div>
@@ -60,7 +60,7 @@
     <div class="scenario-set no-print">
       <h3>Sample test scenarios</h3>
       <p class="helper">Use these to give testers consistent starting points.</p>
-      <button class="secondary" id="sampleFrontBtn" type="button">Houston front yard</button>
+      <button class="secondary" id="sampleFrontBtn" type="button">77429 front yard</button>
       <button class="secondary" id="sampleBackBtn" type="button">Backyard biodiversity</button>
       <button class="secondary" id="samplePatioBtn" type="button">Patio hummingbirds</button>
       <button class="secondary" id="sampleFenceBtn" type="button">Fence-line butterflies</button>

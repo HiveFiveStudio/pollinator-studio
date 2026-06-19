@@ -1,7 +1,7 @@
 # Pollinator Studio — working rules for AI assistants and humans
 
 Read this file before changing anything. It exists to stop the "fix one thing,
-break another" loop. Current version: **V3.0** (see README and the changelog
+break another" loop. Current version: **V4.0** (see README and the changelog
 array in `js/app.js`).
 
 ## What this is
