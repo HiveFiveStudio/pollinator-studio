@@ -1181,25 +1181,66 @@ function renderMaterials(inputs){
   </div>`;
 }
 
+function plantType(p){
+  if(p.tags.includes("grass") || p.tags.includes("shade grass")) return "grass";
+  if(p.tags.includes("shrub")) return "shrub";
+  if(p.tags.includes("vine")) return "vine";
+  if(p.tags.includes("groundcover") || p.tags.includes("xeric groundcover")) return "groundcover";
+  return "perennial";
+}
+
+function primaryRoles(p){
+  const roles = [];
+  ["bees","butterflies","monarchs","hummingbirds","cardinals","biodiversity"].forEach(g => {
+    if((p.roles[g] || 0) >= 5) roles.push(g);
+  });
+  if(p.tags.some(t => t.includes("host"))) roles.push("host");
+  return roles;
+}
+
 function backupChoices(p, inputs, palette){
   const regionPlants = plants.filter(x => x.location.some(loc => inputs.locations.includes(loc)));
-  const selectedIds = new Set(palette.map(x=>x.id));
-  const pool = regionPlants
+  const selectedIds = new Set(palette.map(x => x.id));
+  const pType = plantType(p);
+  const pRoles = primaryRoles(p);
+  const pAvgH = (p.height[0] + p.height[1]) / 2;
+
+  const basePool = regionPlants
     .filter(x => x.id !== p.id && !selectedIds.has(x.id))
+    .filter(x => x.layer === p.layer)
+    .filter(x => plantType(x) === pType)
+    .filter(x => !inputs.nativeOnly || x.native)
     .filter(x => !failReasons(x, inputs).length);
-  const score = x => scorePlant(x, inputs) + (x.tags.some(t => p.tags.includes(t)) ? 2 : 0);
-  const sameLayer = pool.filter(x => x.layer === p.layer)
-    .map(x => ({...x, altScore: score(x)})).sort((a,b) => b.altScore - a.altScore);
-  if(sameLayer.length >= 2) return sameLayer.slice(0, 3);
-  const other = pool.filter(x => x.layer !== p.layer)
-    .map(x => ({...x, altScore: score(x)})).sort((a,b) => b.altScore - a.altScore);
-  return [...sameLayer, ...other].slice(0, 2);
+
+  const altScore = x => {
+    let s = scorePlant(x, inputs);
+    const xRoles = primaryRoles(x);
+    s += xRoles.filter(r => pRoles.includes(r)).length * 3;
+    s += x.tags.filter(t => p.tags.includes(t)).length;
+    const hDiff = Math.abs((x.height[0] + x.height[1]) / 2 - pAvgH);
+    if(hDiff <= 12) s += 2;
+    else if(hDiff <= 24) s += 1;
+    return s;
+  };
+
+  const withRole = basePool.filter(x => primaryRoles(x).some(r => pRoles.includes(r)));
+  return (withRole.length ? withRole : basePool)
+    .map(x => ({...x, altScore: altScore(x)}))
+    .sort((a, b) => b.altScore - a.altScore)
+    .slice(0, 3);
 }
 
 function backupText(p, inputs, palette){
   const alts = backupChoices(p, inputs, palette);
-  if(alts.length) return alts.map(a=>`${a.common} (${a.sci})`).join("; ");
-  return `Ask for a locally native ${layerLabel(p.layer).toLowerCase()} plant with similar sun, moisture, mature size, and wildlife role.`;
+  if(!alts.length){
+    const type = plantType(p);
+    const typeWord = type === "grass" ? "grass" : type === "shrub" ? "shrub" : type === "vine" ? "vine" : type === "groundcover" ? "groundcover" : layerLabel(p.layer).toLowerCase();
+    return `Ask your nursery for a locally native ${typeWord} plant with similar sun, moisture, and wildlife role.`;
+  }
+  const names = alts.map(a => a.common);
+  if(names.length === 1) return `If unavailable, ask for: ${names[0]}.`;
+  if(names.length === 2) return `If unavailable, ask for: ${names[0]} or ${names[1]}.`;
+  return `If unavailable, ask for: ${names[0]}, ${names[1]}, or ${names[2]}.`;
 }
 
 function renderShoppingList(palette, inputs){
