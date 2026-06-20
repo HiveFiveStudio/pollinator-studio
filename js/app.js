@@ -1374,12 +1374,6 @@ function substitutionSuggestions(inputs, palette){
   return suggestions;
 }
 
-function renderSubstitutions(inputs, palette){
-  const suggestions = substitutionSuggestions(inputs, palette);
-  if(!suggestions.length) return `<div class="status">No major substitutions were needed. The selected palette already fits the current site filters and design mode.</div>`;
-  return suggestions.map(s=>`<article class="sub-card"><h3>${esc(s.excluded.common)} <span class="sub-arrow">→</span> ${esc(s.substitute.common)}</h3><p><strong>Why excluded:</strong> ${s.reasons.map(r=>`<span class="chip red">${esc(r)}</span>`).join("")}</p><p><strong>Use instead:</strong> ${esc(s.substitute.common)} keeps a similar layer, habitat role, or goal boost while fitting the active constraints.</p></article>`).join("") + `<p class="muted">Substitution logic is rule-based. Production should expose user-approved swaps and source-validated alternates by ecoregion and nursery availability.</p>`;
-}
-
 function riskFindings(inputs, palette){
   const risks = [];
   const aggressive = palette.filter(p=>p.aggressive).map(p=>p.common);
