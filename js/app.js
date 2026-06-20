@@ -1793,11 +1793,9 @@ const regionSoil = {
     {value:"sandy",   label:"Sandy"}
   ],
   "80906": [
-    {value:"sandy",   label:"Sandy / decomposed granite"},
-    {value:"sandy",   label:"Gravelly / rocky"},
+    {value:"sandy",   label:"Sandy / gravelly / decomposed granite"},
     {value:"clay",    label:"Clay (alkaline)"},
-    {value:"loam",    label:"Clay loam"},
-    {value:"loam",    label:"Loam"},
+    {value:"loam",    label:"Loam / clay loam"},
     {value:"unknown", label:"Not sure"}
   ]
 };
@@ -1953,7 +1951,7 @@ function isBackYardStyle(s){ return ["backyardHabitat","backyardBorder","wildlif
 function siteLabel(sun){return sun === "full" ? "full-sun" : sun === "part" ? "part-sun" : "shade";}
 function moistureLabel(m){return {dry:"dry / fast-draining", average:"average", wet:"wet / rain-garden"}[m] || m;}
 function soilLabel(s, zip){
-  if(zip === "80906") return {unknown:"unknown soil", sandy:"Sandy / decomposed granite", loam:"Loam / silt", clay:"Clay (alkaline)"}[s] || s;
+  if(zip === "80906") return {unknown:"unknown soil", sandy:"Sandy / gravelly / decomposed granite", loam:"Loam / clay loam", clay:"Clay (alkaline)"}[s] || s;
   return {unknown:"unknown soil", clay:"clay / gumbo", loam:"loam", sandy:"sandy"}[s] || s;
 }
 function conditionLabel(c){return {standard:"standard yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard", xeric:"xeric / drought-adapted", rockGarden:"rock garden / excellent drainage", highDesert:"high desert / rocky / alkaline", shadedSite:"shaded site / north-facing"}[c] || c;}
