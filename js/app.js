@@ -449,7 +449,7 @@ function render(inputs, palette, score){
     <div id="tab-care" class="tab-view">${renderCarePlan(inputs, palette)}</div>
     <div id="tab-substitutions" class="tab-view">${renderSubstitutions(inputs, palette)}</div>
     <div id="tab-risks" class="tab-view">${renderRiskPanel(inputs, palette, unique(warnings))}</div>
-    <div id="tab-score" class="tab-view">${renderScore(score)}</div>
+    <div id="tab-score" class="tab-view">${renderScore(score, inputs, palette)}</div>
     <div id="tab-region" class="tab-view">${renderRegionNotes(inputs, palette, region)}</div>
     <div id="tab-prompt" class="tab-view">${renderPrompt(inputs, palette, region)}</div>
     <div id="tab-test" class="tab-view">${renderTesting(inputs)}</div>
