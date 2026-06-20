@@ -1211,13 +1211,20 @@ function backupChoices(p, inputs, palette){
     .filter(x => !failReasons(x, inputs).length);
 
   const altScore = x => {
-    let s = scorePlant(x, inputs);
-    const xRoles = primaryRoles(x);
-    s += xRoles.filter(r => pRoles.includes(r)).length * 3;
-    s += x.tags.filter(t => p.tags.includes(t)).length;
+    let s = 0;
+    // Shared primary wildlife roles — most important; Cardinal flower → hummingbird plants
+    s += primaryRoles(x).filter(r => pRoles.includes(r)).length * 10;
+    // Moisture similarity — wet plant gets wet alternatives, not dry ones
+    s += x.moist.filter(m => p.moist.includes(m)).length * 5;
+    // Sun similarity
+    s += x.sun.filter(sv => p.sun.includes(sv)).length * 3;
+    // Height similarity
     const hDiff = Math.abs((x.height[0] + x.height[1]) / 2 - pAvgH);
-    if(hDiff <= 12) s += 2;
-    else if(hDiff <= 24) s += 1;
+    if(hDiff <= 12) s += 4;
+    else if(hDiff <= 24) s += 2;
+    else if(hDiff <= 48) s += 1;
+    // Shared wildlife tags (fine-grained role overlap)
+    s += x.tags.filter(t => p.tags.includes(t)).length * 2;
     return s;
   };
 
