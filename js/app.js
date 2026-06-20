@@ -39,6 +39,7 @@ function readInputs(){
     layoutType:$("layoutType") ? $("layoutType").value : "flowerBed",
     bedShape:$("bedShape") ? $("bedShape").value : "oval",
     mulchDepth:$("mulchDepth") ? clampNumber($("mulchDepth").value, 3, 1, 6) : 3,
+    mulchType:$("mulchType") ? $("mulchType").value : "organic",
     goals,
     goal:goals[0],
     squirrelMode,
@@ -636,9 +637,19 @@ function waterPlan(inputs){
 }
 
 function mulchPlan(inputs){
+  const isCOGravel = inputs.zip === "80906" && inputs.mulchType === "gravel";
+  if(isCOGravel){
+    return [
+      "Use 3/8–½\" crushed stone or pea gravel at 2–3 inches; gravel improves water infiltration and keeps soil lean, which xeric natives prefer over moisture-retaining organic mulch (per CSU Extension xeriscape guidance).",
+      "Keep gravel pulled back from plant crowns and stems so crowns stay visible and dry between rains.",
+      "Avoid large unshaded dark rock against south- or west-facing walls — it radiates stored heat that can stress nearby plants and raises nighttime temperatures.",
+      "Hand-weed early; xeric plants establish slowly and can be overtopped by weeds pushing up through the gravel layer."
+    ];
+  }
   const items = ["Use mulch as a weed and moisture buffer, not as a mound against crowns or stems.", "Keep a visible planting ring around new crowns so rot, ants, and hidden stem damage are easier to spot.", "Hand-weed early before small native plugs are shaded or crowded by turf and warm-season weeds."];
   if(inputs.condition === "rainGarden" || inputs.condition === "floodEdge") items.push("In flow paths, use mulch carefully so it does not wash over crowns or clog the low point after storms.");
   if(inputs.condition === "streetHellstrip" || inputs.condition === "urbanHeat") items.push("Along pavement, mulch reduces surface heating, but avoid piling it into curb runoff areas.");
+  if(inputs.zip === "80906") items.push("Organic wood mulch works well for higher-water or woodland-edge beds; for truly xeric plantings, consider gravel mulch — it keeps soil lean and well-drained between rains.");
   return items;
 }
 
@@ -1152,38 +1163,61 @@ function materialEstimate(inputs){
 
 function renderMaterials(inputs){
   const m = materialEstimate(inputs);
+  const isCOGravel = inputs.zip === "80906" && inputs.mulchType === "gravel";
   const edgeNote = (inputs.layoutType === "fenceLine" || inputs.layoutType === "foundation")
     ? "Recommended edging assumes the back edge is against a fence, wall, or house and only the front plus side returns need edging. Buy full-perimeter edging if you want the whole outline bordered."
     : "Recommended edging assumes the full visible bed outline gets edged. Curved beds need extra allowance for cuts, overlaps, and layout changes.";
   const fenceNote = (inputs.layoutType === "fenceLine")
     ? `If adding low decorative fencing along the fence planting, start with about ${Math.ceil(inputs.length * 1.10)} linear ft for the main run, then add side returns only if needed.`
     : `If adding low decorative fencing around this bed, start with about ${m.fullWithWaste} linear ft for the full outline.`;
-  return `<div class="info"><strong>Materials estimate:</strong> prototype calculation based on entered length/depth, selected bed shape, and mulch depth. Measure the actual bed before buying because curves, corners, and existing hardscape change the final amount.</div>
-  <div class="materials-grid">
-    <article class="materials-card"><h3>Estimated bed area</h3><strong>${m.area.toFixed(1)} sq ft</strong><p class="muted">Shape-adjusted from ${inputs.length} × ${inputs.depth} ft.</p></article>
-    <article class="materials-card"><h3>Mulch volume</h3><strong>${m.cuYd.toFixed(2)} cu yd</strong><p class="muted">${m.cuFt.toFixed(1)} cu ft at ${m.mulchDepth} in. depth.</p></article>
-    <article class="materials-card"><h3>Bagged mulch</h3><strong>${m.bags2} bags</strong><p class="muted">Using 2-cu-ft bags. Or ${m.bags3} bags if buying 3-cu-ft bags.</p></article>
-    <article class="materials-card"><h3>Edging / fencing</h3><strong>${m.edgeWithWaste} linear ft</strong><p class="muted">Recommended edging length with 10% allowance.</p></article>
-  </div>
-  <div class="logic-grid">
-    ${renderListCard("How the estimate works", [
+  const mulchVolumeCard = isCOGravel
+    ? `<article class="materials-card"><h3>Gravel volume</h3><strong>${m.cuYd.toFixed(2)} cu yd</strong><p class="muted">${m.cuFt.toFixed(1)} cu ft at ${m.mulchDepth} in. depth. Order by the cubic yard or ton from a landscape or aggregate supplier.</p></article>`
+    : `<article class="materials-card"><h3>Mulch volume</h3><strong>${m.cuYd.toFixed(2)} cu yd</strong><p class="muted">${m.cuFt.toFixed(1)} cu ft at ${m.mulchDepth} in. depth.</p></article>`;
+  const bagCard = isCOGravel
+    ? `<article class="materials-card"><h3>Bagged organic</h3><strong>—</strong><p class="muted">Bag count applies only to organic mulch. For gravel: ${m.bags2} two-cu-ft bags or ${m.bags3} three-cu-ft bags if switching to organic instead.</p></article>`
+    : `<article class="materials-card"><h3>Bagged mulch</h3><strong>${m.bags2} bags</strong><p class="muted">Using 2-cu-ft bags. Or ${m.bags3} bags if buying 3-cu-ft bags.</p></article>`;
+  const mulchCalcNotes = isCOGravel
+    ? [
+      `Effective bed area: ${m.area.toFixed(1)} sq ft for ${bedShapeLabel(inputs.bedShape)} / ${layoutTypeLabel(inputs.layoutType)}.`,
+      `Gravel volume: area × ${m.mulchDepth} inches ÷ 12 = ${m.cuFt.toFixed(1)} cubic ft = ${m.cuYd.toFixed(2)} cubic yd.`,
+      `Order from a landscape or aggregate supplier by the cubic yard or ton — not in 2-cu-ft bags.`,
+      `If using organic mulch instead: ${m.bags2} two-cu-ft bags or ${m.bags3} three-cu-ft bags.`
+    ]
+    : [
       `Effective bed area: ${m.area.toFixed(1)} sq ft for ${bedShapeLabel(inputs.bedShape)} / ${layoutTypeLabel(inputs.layoutType)}.`,
       `Mulch volume: area × ${m.mulchDepth} inches ÷ 12 = ${m.cuFt.toFixed(1)} cubic ft.`,
       `Bulk mulch: ${m.cuYd.toFixed(2)} cubic yd. Round up if buying loose bulk mulch.`,
       `Bagged mulch: ${m.bags2} two-cu-ft bags or ${m.bags3} three-cu-ft bags.`
-    ], "logic-card good")}
+    ];
+  const mulchCautions = isCOGravel
+    ? [
+      "Apply gravel as a surface layer only; do not fill planting holes with rock.",
+      "Keep gravel off plant crowns and stems — stay slightly back from the base of each plant.",
+      "Gravel improves water infiltration and keeps soil lean, which xeric natives prefer (CSU Extension xeriscape guidance).",
+      "Avoid large unshaded dark rock right against south- or west-facing walls; it stores and radiates heat at night."
+    ]
+    : [
+      "Use mulch as a surface layer; do not mix large amounts into the planting holes.",
+      "Keep mulch pulled back from perennial crowns, shrub stems, and tree trunks.",
+      inputs.zip === "80906" ? "In clay soil, avoid a smooth-sided planting hole; use native backfill so roots can expand beyond the amended pocket." : "In gumbo clay, avoid creating a bathtub planting hole full of loose imported soil.",
+      "For direct-seeded pockets or tiny plugs, leave a small open ring so mulch does not bury seedlings."
+    ];
+  return `<div class="info"><strong>Materials estimate:</strong> prototype calculation based on entered length/depth, selected bed shape, and mulch depth. Measure the actual bed before buying because curves, corners, and existing hardscape change the final amount.</div>
+  <div class="materials-grid">
+    <article class="materials-card"><h3>Estimated bed area</h3><strong>${m.area.toFixed(1)} sq ft</strong><p class="muted">Shape-adjusted from ${inputs.length} × ${inputs.depth} ft.</p></article>
+    ${mulchVolumeCard}
+    ${bagCard}
+    <article class="materials-card"><h3>Edging / fencing</h3><strong>${m.edgeWithWaste} linear ft</strong><p class="muted">Recommended edging length with 10% allowance.</p></article>
+  </div>
+  <div class="logic-grid">
+    ${renderListCard("How the estimate works", mulchCalcNotes, "logic-card good")}
     ${renderListCard("Edging / low fence guidance", [
       `Estimated full perimeter: ${m.perimeter.toFixed(1)} linear ft.`,
       `Recommended edging buy amount: ${m.edgeWithWaste} linear ft after 10% extra.`,
       edgeNote,
       fenceNote
     ])}
-    ${renderListCard("Mulch cautions", [
-      "Use mulch as a surface layer; do not mix large amounts into the planting holes.",
-      "Keep mulch pulled back from perennial crowns, shrub stems, and tree trunks.",
-      inputs.zip === "80906" ? "In clay soil, avoid a smooth-sided planting hole; use native backfill so roots can expand beyond the amended pocket." : "In gumbo clay, avoid creating a bathtub planting hole full of loose imported soil.",
-      "For direct-seeded pockets or tiny plugs, leave a small open ring so mulch does not bury seedlings."
-    ], "logic-card caution")}
+    ${renderListCard(isCOGravel ? "Gravel mulch guidance" : "Mulch cautions", mulchCautions, "logic-card caution")}
   </div>`;
 }
 
@@ -1827,6 +1861,13 @@ function updateBearModeVisibility(zip){
   if(!isCO && $("bearMode")) $("bearMode").value = "ignore";
 }
 
+function updateMulchTypeVisibility(zip){
+  const container = $("mulchTypeContainer");
+  if(!container) return;
+  const isCO = String(zip).replace(/\D/g,"").slice(0,5) === "80906";
+  container.style.display = isCO ? "" : "none";
+}
+
 function showTab(name){
   const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.textContent === match));
@@ -1951,8 +1992,11 @@ function setSample(goals, style, sun="part", moisture="average", condition="stan
   $("hoa").checked = !list.includes("cardinals") && isFrontYardStyle(style);
   $("mosquitoAware").checked = mosquitoAware;
   if($("snakeMode")) $("snakeMode").value = "ignore";
+  if($("mulchType")) $("mulchType").value = zip === "80906" ? "gravel" : "organic";
   updateConditionDropdown($("zip").value);
   updateSoilMoistureDropdowns($("zip").value);
+  updateBearModeVisibility(zip);
+  updateMulchTypeVisibility(zip);
   generate();
 }
 
@@ -1979,10 +2023,12 @@ function resetInputs(){
   $("mosquitoAware").checked = false;
   $("snakeMode").value = "ignore";
   if($("bearMode")) $("bearMode").value = "ignore";
+  if($("mulchType")) $("mulchType").value = "gravel";
   updateConditionDropdown("77429");
   updateSoilMoistureDropdowns("77429");
   updateSampleButtons("77429");
   updateBearModeVisibility("77429");
+  updateMulchTypeVisibility("77429");
   $("results").innerHTML = `<div class="empty"><h2>No design generated yet</h2><p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p></div>`;
 }
 
@@ -2024,7 +2070,7 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
-$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSoilMoistureDropdowns($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); });
+$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSoilMoistureDropdowns($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); updateMulchTypeVisibility($("zip").value); });
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
 $("printBtn").addEventListener("click", printDesignSheet);
@@ -2038,4 +2084,5 @@ $("printBtn").addEventListener("click", printDesignSheet);
 updateSoilMoistureDropdowns($("zip").value);
 updateSampleButtons($("zip").value);
 updateBearModeVisibility($("zip").value);
+updateMulchTypeVisibility($("zip").value);
 })();
