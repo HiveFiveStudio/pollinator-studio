@@ -422,6 +422,7 @@ function render(inputs, palette, score){
     <div class="tabs no-print">
       <button type="button" class="tab active" onclick="PS.showTab('summary')">Plan summary</button>
       <button type="button" class="tab" onclick="PS.showTab('palette')">Plant palette</button>
+      <button type="button" class="tab" onclick="PS.showTab('plantdb')">Plant database</button>
       <button type="button" class="tab" onclick="PS.showTab('dataqa')">Fit + data QA</button>
       <button type="button" class="tab" onclick="PS.showTab('layout')">Layout</button>
       <button type="button" class="tab" onclick="PS.showTab('why')">Why generated</button>
@@ -439,6 +440,7 @@ function render(inputs, palette, score){
     </div>
     <div id="tab-summary" class="tab-view active">${renderSummary(inputs, palette, score, region, title, totalPlants)}</div>
     <div id="tab-palette" class="tab-view">${renderPalette(palette, inputs)}</div>
+    <div id="tab-plantdb" class="tab-view">${renderPlantDatabase(inputs)}</div>
     <div id="tab-dataqa" class="tab-view">${renderDataQA(inputs, palette)}</div>
     <div id="tab-layout" class="tab-view">${renderLayout(inputs, palette)}</div>
     <div id="tab-why" class="tab-view">${renderWhy(inputs, palette, score, region)}</div>
@@ -841,6 +843,54 @@ function renderPalette(palette, inputs){
     ${renderPlantCareSnippet(p, inputs)}
     <ul class="why-list">${whySelected(p, inputs).map(r=>`<li>${esc(r)}</li>`).join("")}</ul>
   </article>`).join("") + `</div>`;
+}
+
+function renderPlantDatabase(inputs){
+  if(!inputs.locations) return `<p class="muted">No plant data available for this region.</p>`;
+  const region = regionFromZip(inputs.zip);
+  const regionName = region ? region.name : inputs.zip;
+  const regionPlants = plants.filter(p => p.location.some(loc => inputs.locations.includes(loc)));
+  const total = regionPlants.length;
+
+  const isGrass = p => p.tags.includes("grass") || p.tags.includes("shade grass");
+  const back    = regionPlants.filter(p => p.layer === "back"   && !isGrass(p));
+  const middle  = regionPlants.filter(p => p.layer === "middle" && !isGrass(p));
+  const front   = regionPlants.filter(p => p.layer === "front"  && !isGrass(p));
+  const grasses = regionPlants.filter(isGrass);
+
+  const sunShort   = arr => arr.map(s => ({full:"Full",part:"Part",shade:"Shade"}[s] || s)).join(" · ");
+  const moistShort = arr => arr.map(m => ({dry:"Dry",average:"Avg",wet:"Wet"}[m]   || m)).join(" · ");
+
+  const roleChips = p => {
+    const chips = [];
+    if((p.roles.bees        || 0) >= 5) chips.push("Bees");
+    if((p.roles.butterflies || 0) >= 5) chips.push("Butterfly");
+    if((p.roles.monarchs    || 0) >= 5) chips.push("Monarch");
+    if((p.roles.hummingbirds|| 0) >= 5) chips.push("Hummingbird");
+    if((p.roles.cardinals   || 0) >= 5) chips.push("Songbirds");
+    if(p.tags.some(t => t.includes("host"))) chips.push("Host");
+    return chips.map(c => `<span class="chip">${esc(c)}</span>`).join(" ");
+  };
+
+  const renderRow = p => `<tr>
+    <td><strong>${esc(p.common)}${bearBadge(p, inputs)}</strong>${p.native ? "" : ` <span class="chip" style="background:#f5e8d5;color:#7a5020">non-native</span>`}<br><span class="sciname">${esc(p.sci)}</span></td>
+    <td>${bloomWindow(p)}</td>
+    <td>${sunShort(p.sun)}</td>
+    <td>${moistShort(p.moist)}</td>
+    <td>${roleChips(p)}</td>
+  </tr>`;
+
+  const renderSection = (label, pList) => {
+    if(!pList.length) return "";
+    return `<h3>${esc(label)}</h3><table><thead><tr><th>Plant</th><th>Bloom</th><th>Sun</th><th>Moisture</th><th>Wildlife roles</th></tr></thead><tbody>${pList.map(renderRow).join("")}</tbody></table>`;
+  };
+
+  return `<p class="status"><strong>${total} plant${total === 1 ? "" : "s"} available for ${esc(regionName)} (${esc(inputs.zip)})</strong></p>
+  ${renderSection("Back / structure layer", back)}
+  ${renderSection("Middle layer", middle)}
+  ${renderSection("Front / ground layer", front)}
+  ${renderSection("Grasses", grasses)}
+  <p class="shop-note">Full regional inventory — design generation applies site filters and selects from this pool. Non-native companions appear here but are excluded when native-only mode is on.</p>`;
 }
 
 function plantImageFigure(p){
@@ -1861,7 +1911,7 @@ function updateMulchTypeVisibility(zip){
 }
 
 function showTab(name){
-  const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
+  const match = {summary:"Plan summary", palette:"Plant palette", plantdb:"Plant database", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.textContent === match));
   document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
   const view = $("tab-" + name);
