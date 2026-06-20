@@ -1203,15 +1203,10 @@ function backupChoices(p, inputs, palette){
   const pRoles = primaryRoles(p);
   const pAvgH = (p.height[0] + p.height[1]) / 2;
 
-  // Specialist roles are more distinctive than generalist ones.
   const ROLE_WEIGHT = { hummingbirds:6, host:5, monarchs:5, cardinals:4, butterflies:2, bees:2, biodiversity:1 };
   const wOf = r => ROLE_WEIGHT[r] || 1;
-
-  // The target's signature = its rarest / most distinctive role.
   const pSignature = pRoles.slice().sort((a, b) => wOf(b) - wOf(a))[0] || null;
 
-  // Jaccard similarity (shared / union): rewards a CLOSE profile match and
-  // penalises do-everything generalists, whose large sets inflate the union.
   const jaccard = (a, b) => {
     const A = new Set(a), B = new Set(b);
     if(!A.size && !B.size) return 0;
@@ -1219,15 +1214,16 @@ function backupChoices(p, inputs, palette){
     return inter / (A.size + B.size - inter);
   };
 
+  // Plants already in the design are NO LONGER excluded — they are still valid
+  // "get this instead" suggestions, and excluding them was throwing out the best
+  // matches (the other milkweed, the other hummingbird plants, etc.).
   let pool = regionPlants
-    .filter(x => x.id !== p.id && !selectedIds.has(x.id))
+    .filter(x => x.id !== p.id)
     .filter(x => x.layer === p.layer)
     .filter(x => plantType(x) === pType)
     .filter(x => !inputs.nativeOnly || x.native)
     .filter(x => !failReasons(x, inputs).length);
 
-  // Narrow to plants sharing the target's signature role first — this is what
-  // makes each plant's backups DIFFER instead of all defaulting to generalists.
   if(pSignature){
     const sig = pool.filter(x => primaryRoles(x).includes(pSignature));
     if(sig.length >= 2) pool = sig;
@@ -1236,10 +1232,11 @@ function backupChoices(p, inputs, palette){
   const altScore = x => {
     const xRoles = primaryRoles(x);
     let s = 0;
-    if(pSignature && xRoles.includes(pSignature)) s += 15;        // shares signature role
-    s += jaccard(pRoles, xRoles) * 20;                            // role-profile closeness
+    if(selectedIds.has(x.id)) s -= 8;            // gently prefer alternatives not already in the plan
+    if(pSignature && xRoles.includes(pSignature)) s += 15;
+    s += jaccard(pRoles, xRoles) * 20;
     s += xRoles.filter(r => pRoles.includes(r)).reduce((a, r) => a + wOf(r), 0);
-    s += jaccard(p.moist, x.moist) * 12;                          // wet→wet, dry→dry
+    s += jaccard(p.moist, x.moist) * 12;
     s += jaccard(p.sun, x.sun) * 6;
     const hDiff = Math.abs((x.height[0] + x.height[1]) / 2 - pAvgH);
     if(hDiff <= 12) s += 4; else if(hDiff <= 24) s += 2; else if(hDiff <= 48) s += 1;
