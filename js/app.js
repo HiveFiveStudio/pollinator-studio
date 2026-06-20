@@ -429,7 +429,6 @@ function render(inputs, palette, score){
       <button type="button" class="tab" onclick="PS.showTab('shopping')">Nursery list</button>
       <button type="button" class="tab" onclick="PS.showTab('materials')">Materials</button>
       <button type="button" class="tab" onclick="PS.showTab('care')">Establishment</button>
-      <button type="button" class="tab" onclick="PS.showTab('substitutions')">Substitutions</button>
       <button type="button" class="tab" onclick="PS.showTab('risks')">Warnings</button>
       <button type="button" class="tab" onclick="PS.showTab('score')">Score</button>
       <button type="button" class="tab" onclick="PS.showTab('region')">Region notes</button>
@@ -447,7 +446,6 @@ function render(inputs, palette, score){
     <div id="tab-shopping" class="tab-view">${renderShoppingList(palette, inputs)}</div>
     <div id="tab-materials" class="tab-view">${renderMaterials(inputs)}</div>
     <div id="tab-care" class="tab-view">${renderCarePlan(inputs, palette)}</div>
-    <div id="tab-substitutions" class="tab-view">${renderSubstitutions(inputs, palette)}</div>
     <div id="tab-risks" class="tab-view">${renderRiskPanel(inputs, palette, unique(warnings))}</div>
     <div id="tab-score" class="tab-view">${renderScore(score, inputs, palette)}</div>
     <div id="tab-region" class="tab-view">${renderRegionNotes(inputs, palette, region)}</div>
@@ -1798,7 +1796,7 @@ function updateBearModeVisibility(zip){
 }
 
 function showTab(name){
-  const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", substitutions:"Substitutions", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
+  const match = {summary:"Plan summary", palette:"Plant palette", dataqa:"Fit + data QA", layout:"Layout", why:"Why generated", timeline:"Bloom timeline", seasonal:"Seasonal score", shopping:"Nursery list", materials:"Materials", care:"Establishment", risks:"Warnings", score:"Score", region:"Region notes", prompt:"Visual prompt", test:"Test this app", changelog:"Changelog"}[name];
   document.querySelectorAll(".tab").forEach(btn => btn.classList.toggle("active", btn.textContent === match));
   document.querySelectorAll(".tab-view").forEach(v => v.classList.remove("active"));
   const view = $("tab-" + name);
