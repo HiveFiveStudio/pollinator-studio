@@ -1203,35 +1203,53 @@ function backupChoices(p, inputs, palette){
   const pRoles = primaryRoles(p);
   const pAvgH = (p.height[0] + p.height[1]) / 2;
 
-  const basePool = regionPlants
+  // Specialist roles are more distinctive than generalist ones.
+  const ROLE_WEIGHT = { hummingbirds:6, host:5, monarchs:5, cardinals:4, butterflies:2, bees:2, biodiversity:1 };
+  const wOf = r => ROLE_WEIGHT[r] || 1;
+
+  // The target's signature = its rarest / most distinctive role.
+  const pSignature = pRoles.slice().sort((a, b) => wOf(b) - wOf(a))[0] || null;
+
+  // Jaccard similarity (shared / union): rewards a CLOSE profile match and
+  // penalises do-everything generalists, whose large sets inflate the union.
+  const jaccard = (a, b) => {
+    const A = new Set(a), B = new Set(b);
+    if(!A.size && !B.size) return 0;
+    let inter = 0; A.forEach(v => { if(B.has(v)) inter++; });
+    return inter / (A.size + B.size - inter);
+  };
+
+  let pool = regionPlants
     .filter(x => x.id !== p.id && !selectedIds.has(x.id))
     .filter(x => x.layer === p.layer)
     .filter(x => plantType(x) === pType)
     .filter(x => !inputs.nativeOnly || x.native)
     .filter(x => !failReasons(x, inputs).length);
 
+  // Narrow to plants sharing the target's signature role first — this is what
+  // makes each plant's backups DIFFER instead of all defaulting to generalists.
+  if(pSignature){
+    const sig = pool.filter(x => primaryRoles(x).includes(pSignature));
+    if(sig.length >= 2) pool = sig;
+  }
+
   const altScore = x => {
+    const xRoles = primaryRoles(x);
     let s = 0;
-    // Shared primary wildlife roles — most important; Cardinal flower → hummingbird plants
-    s += primaryRoles(x).filter(r => pRoles.includes(r)).length * 10;
-    // Moisture similarity — wet plant gets wet alternatives, not dry ones
-    s += x.moist.filter(m => p.moist.includes(m)).length * 5;
-    // Sun similarity
-    s += x.sun.filter(sv => p.sun.includes(sv)).length * 3;
-    // Height similarity
+    if(pSignature && xRoles.includes(pSignature)) s += 15;        // shares signature role
+    s += jaccard(pRoles, xRoles) * 20;                            // role-profile closeness
+    s += xRoles.filter(r => pRoles.includes(r)).reduce((a, r) => a + wOf(r), 0);
+    s += jaccard(p.moist, x.moist) * 12;                          // wet→wet, dry→dry
+    s += jaccard(p.sun, x.sun) * 6;
     const hDiff = Math.abs((x.height[0] + x.height[1]) / 2 - pAvgH);
-    if(hDiff <= 12) s += 4;
-    else if(hDiff <= 24) s += 2;
-    else if(hDiff <= 48) s += 1;
-    // Shared wildlife tags (fine-grained role overlap)
-    s += x.tags.filter(t => p.tags.includes(t)).length * 2;
+    if(hDiff <= 12) s += 4; else if(hDiff <= 24) s += 2; else if(hDiff <= 48) s += 1;
+    s += jaccard(p.tags, x.tags) * 4;
     return s;
   };
 
-  const withRole = basePool.filter(x => primaryRoles(x).some(r => pRoles.includes(r)));
-  return (withRole.length ? withRole : basePool)
+  return pool
     .map(x => ({...x, altScore: altScore(x)}))
-    .sort((a, b) => b.altScore - a.altScore)
+    .sort((a, b) => b.altScore - a.altScore || a.common.localeCompare(b.common))
     .slice(0, 3);
 }
 
