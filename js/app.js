@@ -2,7 +2,7 @@
 "use strict";
 // Logic + rendering. Reads the global `plants` defined in plant-data.js (loaded first).
 const months = [3,4,5,6,7,8,9,10,11];
-const monthName = {3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov"};
+const monthName = {2:"Feb",3:"Mar",4:"Apr",5:"May",6:"Jun",7:"Jul",8:"Aug",9:"Sep",10:"Oct",11:"Nov"};
 let runCount = 0;
 const goalOrder = ["bees","butterflies","monarchs","hummingbirds","cardinals","biodiversity"];
 const goalNames = {bees:"Bees", butterflies:"Butterflies", monarchs:"Monarchs", hummingbirds:"Hummingbirds", cardinals:"Cardinals / songbirds", biodiversity:"Maximum biodiversity"};
