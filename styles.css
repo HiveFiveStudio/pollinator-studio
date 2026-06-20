@@ -57,6 +57,9 @@ p{line-height:1.5}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacin
 .generation-notice strong{display:block;font-size:17px;margin-bottom:3px}
 .tab-guide{margin:18px 0 8px;padding:12px 14px;border-radius:16px;background:#fff7e8;border:2px solid #e2c98f;color:#46361b;font-weight:800}
 .tabs{position:sticky;top:0;z-index:20;background:rgba(255,253,248,.97);border:2px solid #d7c8aa;border-radius:20px;padding:12px;box-shadow:0 14px 32px rgba(43,36,24,.12);gap:10px;margin:12px 0 18px}
+.plant-photo-slot { display: flex; flex-direction: column; align-items: flex-end; gap: 4px; }
+.plant-photo-link { font-size: 0.8rem; font-weight: 600; text-decoration: none; white-space: nowrap; }
+.plant-photo-link:hover { text-decoration: underline; }
 .tab{padding:12px 16px;border:2px solid #c8b891;background:#fffaf0;color:#26331f;box-shadow:0 4px 10px rgba(43,36,24,.06)}
 .tab:hover{background:#f1eadc;filter:none}
 .tab.active{background:#1f2a1e;color:white;border-color:#1f2a1e;box-shadow:0 8px 18px rgba(31,42,30,.22)}

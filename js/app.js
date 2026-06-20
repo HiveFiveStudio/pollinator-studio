@@ -815,7 +815,7 @@ function bearBadge(p, inputs){
 function renderPalette(palette, inputs){
   const hasBear = inputs.zip === "80906" && palette.some(p => p.bear);
   const bearLegend = hasBear ? `<p class="bear-legend"><span aria-hidden="true">🐻</span> = bear attractant — see the <strong>Bear activity</strong> setting in Garden inputs.</p>` : "";
-  return bearLegend + `<p class="photo-note"><strong>Plant images:</strong> V2.6 adds a top-right reference image slot to each plant card. The included images are local reference illustrations/placeholders so the app works offline; replace them with verified plant photos and credits before public release.</p><div class="card-grid">` + palette.map(p=>`<article class="plant-card">
+  return bearLegend + `<p class="photo-note"><strong>Plant images:</strong> V2.6 adds a top-right reference image slot to each plant card. Each card links to real, community-verified photos on iNaturalist (opens in a new tab). The small top-right thumbnail is a local reference illustration so the app still works offline.</p><div class="card-grid">` + palette.map(p=>`<article class="plant-card">
     <div class="plant-card-head">
       <div class="plant-title">
         <h3>${esc(p.common)}${bearBadge(p, inputs)}</h3>
@@ -895,7 +895,8 @@ function renderPlantDatabase(inputs){
 
 function plantImageFigure(p){
   const src = `img/plants/${p.id}.svg`;
-  return `<button type="button" class="plant-photo-button" onclick="PS.openPlantImage('${esc(p.id)}')" aria-label="Open larger reference image for ${esc(p.common)}"><img src="${esc(src)}" alt="Reference image for ${esc(p.common)}" loading="lazy" onerror="this.parentElement.classList.add('photo-missing');this.parentElement.innerHTML='Photo coming soon';"><span>Reference image</span></button>`;
+  const photoUrl = `https://www.inaturalist.org/search?q=${encodeURIComponent(p.sci || p.common)}`;
+  return `<div class="plant-photo-slot"><button type="button" class="plant-photo-button" onclick="PS.openPlantImage('${esc(p.id)}')" aria-label="Open larger reference image for ${esc(p.common)}"><img src="${esc(src)}" alt="Reference image for ${esc(p.common)}" loading="lazy" onerror="this.parentElement.classList.add('photo-missing');this.parentElement.innerHTML='Photo coming soon';"><span>Reference image</span></button><a class="plant-photo-link" href="${photoUrl}" target="_blank" rel="noopener">📷 See real photos →</a></div>`;
 }
 
 function openPlantImage(id){
