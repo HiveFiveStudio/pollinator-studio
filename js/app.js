@@ -793,11 +793,19 @@ function renderCarePlan(inputs, palette){
   </div><p class="muted">This is design-adjacent establishment guidance. V4.0 does not create reminders, journals, or care logs.</p>`;
 }
 
+function bearBadge(p, inputs){
+  if(!p.bear || inputs.zip !== "80906") return "";
+  const cls = inputs.bearMode === "reduce" ? " prominent" : "";
+  return `<span class="bear-badge${cls}" title="Bear attractant" aria-label="Bear attractant" role="img">🐻</span>`;
+}
+
 function renderPalette(palette, inputs){
-  return `<p class="photo-note"><strong>Plant images:</strong> V2.6 adds a top-right reference image slot to each plant card. The included images are local reference illustrations/placeholders so the app works offline; replace them with verified plant photos and credits before public release.</p><div class="card-grid">` + palette.map(p=>`<article class="plant-card">
+  const hasBear = inputs.zip === "80906" && palette.some(p => p.bear);
+  const bearLegend = hasBear ? `<p class="bear-legend"><span aria-hidden="true">🐻</span> = bear attractant — see the <strong>Bear activity</strong> setting in Garden inputs.</p>` : "";
+  return bearLegend + `<p class="photo-note"><strong>Plant images:</strong> V2.6 adds a top-right reference image slot to each plant card. The included images are local reference illustrations/placeholders so the app works offline; replace them with verified plant photos and credits before public release.</p><div class="card-grid">` + palette.map(p=>`<article class="plant-card">
     <div class="plant-card-head">
       <div class="plant-title">
-        <h3>${esc(p.common)}</h3>
+        <h3>${esc(p.common)}${bearBadge(p, inputs)}</h3>
         <div class="sciname">${esc(p.sci)}</div>
       </div>
       ${plantImageFigure(p)}
@@ -1266,8 +1274,10 @@ function backupText(p, inputs, palette){
 function renderShoppingList(palette, inputs){
   const order = ["back","middle","front"];
   const rows = [];
-  order.forEach(layer => palette.filter(p=>p.layer===layer).forEach(p=>rows.push(`<tr><td><strong>${esc(layerLabel(layer))}</strong></td><td><strong>${esc(p.common)}</strong><span class="sciname">${esc(p.sci)}</span></td><td>${p.qty}</td><td>${esc(containerSuggestion(p, inputs))}</td><td>${esc(backupText(p, inputs, palette))}</td><td>${esc(shoppingNote(p, inputs))}</td></tr>`)));
-  return `<table><thead><tr><th>Layer</th><th>Plant</th><th>Qty</th><th>Ask nursery for</th><th>Backup choice</th><th>Buying note</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="shop-note">Nursery list is grouped by design layer. Backup choices are rule-based alternates that pass the current site filters when possible. Verify local availability, container size, straight species vs. cultivar behavior, and mature size before purchase.</p>`;
+  order.forEach(layer => palette.filter(p=>p.layer===layer).forEach(p=>rows.push(`<tr><td><strong>${esc(layerLabel(layer))}</strong></td><td><strong>${esc(p.common)}</strong>${bearBadge(p, inputs)}<span class="sciname">${esc(p.sci)}</span></td><td>${p.qty}</td><td>${esc(containerSuggestion(p, inputs))}</td><td>${esc(backupText(p, inputs, palette))}</td><td>${esc(shoppingNote(p, inputs))}</td></tr>`)));
+  const hasBear = inputs.zip === "80906" && palette.some(p => p.bear);
+  const bearLegend = hasBear ? `<p class="bear-legend"><span aria-hidden="true">🐻</span> = bear attractant — see the <strong>Bear activity</strong> setting in Garden inputs.</p>` : "";
+  return `<table><thead><tr><th>Layer</th><th>Plant</th><th>Qty</th><th>Ask nursery for</th><th>Backup choice</th><th>Buying note</th></tr></thead><tbody>${rows.join("")}</tbody></table><p class="shop-note">Nursery list is grouped by design layer. Backup choices are rule-based alternates that pass the current site filters when possible. Verify local availability, container size, straight species vs. cultivar behavior, and mature size before purchase.</p>${bearLegend}`;
 }
 
 function containerSuggestion(p, inputs){

@@ -47,6 +47,9 @@ p{line-height:1.5}.eyebrow{font-size:12px;text-transform:uppercase;letter-spacin
 .map-legend-row strong{text-align:right}
 .map-legend-note{margin:8px 0 0;font-size:12px;color:var(--muted);line-height:1.4}
 @media(max-width:900px){.map-flex{grid-template-columns:1fr}.map-legend{order:-1}}
+.bear-badge{display:inline-block;font-size:.9em;margin-left:4px;vertical-align:middle;cursor:help;line-height:1}
+.bear-badge.prominent{background:#fff0c4;border:1px solid #e8c94d;border-radius:999px;padding:1px 5px}
+.bear-legend{font-size:12px;color:var(--muted);margin:8px 0 0}
 
 
 /* V3.0 hotfix after code review */
