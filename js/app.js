@@ -1444,6 +1444,8 @@ function riskFindings(inputs, palette){
   if(squirrelRisk.length) risks.push(["Squirrel-aware tradeoff", squirrelRisk, "Bird habitat shares berries, fruit, seed heads, and cover with other wildlife."]);
   if(inputs.mosquitoAware) risks.push(["Mosquito-aware limitation", palette.filter(p=>p.tags.includes("aromatic edge") || p.tags.includes("mint family")).map(p=>p.common), "Aromatic plants are a comfort-edge design cue only; passive planting is not reliable mosquito control. Remove standing water and use proven bite-prevention practices."]);
   if(inputs.snakeAware){
+    const snakeCandidates = palette.filter(p => p.tags.includes("open base") || p.tags.includes("spiky edge") || p.tags.includes("aromatic edge") || p.tags.includes("snake-aware candidate")).map(p=>p.common);
+    const snakeDenseRisk = palette.filter(p => p.tags.includes("groundcover") || p.tags.includes("dense low cover") || (p.aggressive && p.tags.includes("cover"))).map(p=>p.common);
     if(snakeCandidates.length) risks.push(["Snake-aware open-base candidates", snakeCandidates, "Use these as visible, open-base or edge plants; keep the base clear rather than creating a dense thicket.", true]);
     if(snakeDenseRisk.length) risks.push(["Snake hiding-cover caution", snakeDenseRisk, "Avoid dense low growth beside doors, paths, seating, and house foundations; thin or substitute if visibility is poor."]);
     risks.push(["Snake-aware limitation", ["habitat management", "rodent reduction", "open visibility"], "Plants alone are not reliable snake deterrents. The useful design move is less hiding cover and fewer food/rodent attractors."]);
