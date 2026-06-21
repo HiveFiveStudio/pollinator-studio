@@ -815,7 +815,7 @@ function bearBadge(p, inputs){
 function renderPalette(palette, inputs){
   const hasBear = inputs.zip === "80906" && palette.some(p => p.bear);
   const bearLegend = hasBear ? `<p class="bear-legend"><span aria-hidden="true">🐻</span> = bear attractant — see the <strong>Bear activity</strong> setting in Garden inputs.</p>` : "";
-  return bearLegend + `<p class="photo-note"><strong>Plant images:</strong> V2.6 adds a top-right reference image slot to each plant card. Each card links to real, community-verified photos on iNaturalist (opens in a new tab). The small top-right thumbnail is a local reference illustration so the app still works offline.</p><div class="card-grid">` + palette.map(p=>`<article class="plant-card">
+  return bearLegend + `<p class="photo-note"><strong>Plant images:</strong> V2.6 adds a top-right reference image slot to each plant card. Each plant card links out to real photos (iNaturalist) and a description to read (Wikipedia), both opening in a new tab. A small reference illustration appears in the corner only for plants that have one.</p><div class="card-grid">` + palette.map(p=>`<article class="plant-card">
     <div class="plant-card-head">
       <div class="plant-title">
         <h3>${esc(p.common)}${bearBadge(p, inputs)}</h3>
@@ -895,8 +895,10 @@ function renderPlantDatabase(inputs){
 
 function plantImageFigure(p){
   const src = `img/plants/${p.id}.svg`;
-  const photoUrl = `https://www.inaturalist.org/search?q=${encodeURIComponent(p.sci || p.common)}`;
-  return `<div class="plant-photo-slot"><button type="button" class="plant-photo-button" onclick="PS.openPlantImage('${esc(p.id)}')" aria-label="Open larger reference image for ${esc(p.common)}"><img src="${esc(src)}" alt="Reference image for ${esc(p.common)}" loading="lazy" onerror="this.parentElement.classList.add('photo-missing');this.parentElement.innerHTML='Photo coming soon';"><span>Reference image</span></button><a class="plant-photo-link" href="${photoUrl}" target="_blank" rel="noopener">📷 See real photos →</a></div>`;
+  const q = encodeURIComponent((p.sci || p.common).replace(/\s+spp\.?$/i, "").trim());
+  const photoUrl = `https://www.inaturalist.org/search?q=${q}`;
+  const wikiUrl = `https://en.wikipedia.org/wiki/Special:Search?search=${q}&go=Go`;
+  return `<div class="plant-photo-slot"><button type="button" class="plant-photo-button" onclick="PS.openPlantImage('${esc(p.id)}')" aria-label="Open larger reference image for ${esc(p.common)}"><img src="${esc(src)}" alt="Reference illustration for ${esc(p.common)}" loading="lazy" onerror="this.parentElement.remove();"><span>Illustration</span></button><a class="plant-photo-link" href="${photoUrl}" target="_blank" rel="noopener">📷 See real photos →</a><a class="plant-photo-link" href="${wikiUrl}" target="_blank" rel="noopener">📖 Read on Wikipedia →</a></div>`;
 }
 
 function openPlantImage(id){
