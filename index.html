@@ -81,7 +81,7 @@
 
 <main class="shell">
   <section class="panel form-panel">
-    <h2>Garden inputs</h2>
+    <h2>Garden inputs<span aria-hidden="true" style="margin-left:8px;vertical-align:-5px;opacity:0.75;display:inline-block;line-height:0"><svg width="22" height="22" viewBox="-20 -22 40 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="-7" cy="-7" rx="6.5" ry="4.5" fill="#e4eef2" opacity="0.92"/><ellipse cx="7" cy="-7" rx="6.5" ry="4.5" fill="#e4eef2" opacity="0.92"/><ellipse cx="0" cy="2" rx="8.5" ry="11.5" fill="#eaa31a"/><ellipse cx="0" cy="-3" rx="8.5" ry="2.3" fill="#3a2c12"/><ellipse cx="0" cy="3.5" rx="7.8" ry="2.3" fill="#3a2c12"/><ellipse cx="0" cy="9" rx="5.6" ry="2" fill="#3a2c12"/><circle cx="0" cy="-12" r="4" fill="#2c2417"/><path d="M-1.5,-15 q-2.5,-3 -5,-4.5" stroke="#2c2417" stroke-width="1.1" fill="none" stroke-linecap="round"/><path d="M1.5,-15 q2.5,-3 5,-4.5" stroke="#2c2417" stroke-width="1.1" fill="none" stroke-linecap="round"/></svg></span></h2>
     <div class="grid">
       <div><label for="zip">Region</label><select id="zip"><option value="77429">77429 — Cypress, TX (Houston / Gulf Coast)</option><option value="80906">80906 — Colorado Springs, CO (Front Range)</option></select></div>
       <div><label for="length">Length, feet</label><input id="length" type="number" min="3" max="100" value="14"></div>
@@ -97,7 +97,7 @@
       <div><label for="squirrelMode">Squirrel handling</label><select id="squirrelMode"><option value="factor">Factor squirrels into choices</option><option selected value="ignore">Ignore squirrels</option></select><p class="helper">This changes how strongly fruit, berries, seed heads, and shared wildlife resources are suppressed.</p></div>
       <div><label for="snakeMode">Snake-aware planting</label><select id="snakeMode"><option selected value="ignore">Do not factor in snakes</option><option value="openBase">Favor open-base plants / reduce hiding cover</option><option value="spikyAromatic">Favor open bases + spiky or aromatic edge candidates</option></select><p class="helper">This does not snake-proof a yard. It shifts the design away from dense low cover and toward visibility, open bases, and optional spiky/aromatic edge candidates.</p></div>
       <div id="bearModeContainer" style="display:none"><label for="bearMode">Bear activity (Colorado)</label><select id="bearMode"><option selected value="ignore">Ignore bears</option><option value="reduce">Reduce bear attraction</option><option value="attract">Attract bears</option></select><p class="helper">Colorado Front Range only. Black bears are drawn to high-calorie fruits and berries. "Reduce" down-ranks berry/fruit attractants near the home — it does not repel bears. "Attract" favors bear-food plants but shows a prominent safety warning.</p></div>
-      <div class="wide"><label id="goalLabel">Habitat goals</label>
+      <div class="wide"><label id="goalLabel">Habitat goals<span aria-hidden="true" style="margin-left:8px;vertical-align:-5px;opacity:0.75;display:inline-block;line-height:0"><svg width="22" height="22" viewBox="-20 -18 40 40" xmlns="http://www.w3.org/2000/svg"><ellipse cx="-8" cy="-5" rx="8.5" ry="6.5" fill="#7f86c9" stroke="#2e2f4f" stroke-width="1.3" transform="rotate(-22 -8 -5)"/><ellipse cx="8" cy="-5" rx="8.5" ry="6.5" fill="#7f86c9" stroke="#2e2f4f" stroke-width="1.3" transform="rotate(22 8 -5)"/><ellipse cx="-6.5" cy="7" rx="6" ry="5" fill="#9ba1d6" stroke="#2e2f4f" stroke-width="1.3" transform="rotate(20 -6.5 7)"/><ellipse cx="6.5" cy="7" rx="6" ry="5" fill="#9ba1d6" stroke="#2e2f4f" stroke-width="1.3" transform="rotate(-20 6.5 7)"/><ellipse cx="0" cy="1" rx="1.6" ry="10.5" fill="#2e2f4f"/><path d="M-1,-9 q-3,-4 -6.5,-5.5" stroke="#2e2f4f" stroke-width="1" fill="none" stroke-linecap="round"/><path d="M1,-9 q3,-4 6.5,-5.5" stroke="#2e2f4f" stroke-width="1" fill="none" stroke-linecap="round"/></svg></span></label>
         <div class="goal-checks" role="group" aria-labelledby="goalLabel">
           <label class="check"><input class="goalCheck" id="goalBees" type="checkbox" value="bees"> Bees</label>
           <label class="check"><input class="goalCheck" id="goalButterflies" type="checkbox" value="butterflies"> Butterflies</label>
@@ -125,7 +125,7 @@
       <button class="secondary" id="printBtn" type="button">Print / save PDF</button>
     </div>
     <div class="scenario-set no-print">
-      <h3>Sample test scenarios</h3>
+      <h3>Sample test scenarios<span aria-hidden="true" style="margin-left:8px;vertical-align:-5px;opacity:0.75;display:inline-block;line-height:0"><svg width="20" height="20" viewBox="-18 -18 36 36" xmlns="http://www.w3.org/2000/svg"><g fill="#e7a6c0"><ellipse cx="0" cy="-8.5" rx="4" ry="6.2"/><ellipse cx="0" cy="-8.5" rx="4" ry="6.2" transform="rotate(72 0 0)"/><ellipse cx="0" cy="-8.5" rx="4" ry="6.2" transform="rotate(144 0 0)"/><ellipse cx="0" cy="-8.5" rx="4" ry="6.2" transform="rotate(216 0 0)"/><ellipse cx="0" cy="-8.5" rx="4" ry="6.2" transform="rotate(288 0 0)"/></g><circle cx="0" cy="0" r="4.2" fill="#eaa31a"/></svg></span></h3>
       <p class="helper">Use these to give testers consistent starting points.</p>
       <button class="secondary" id="sampleFrontBtn" type="button">77429 front yard</button>
       <button class="secondary" id="sampleBackBtn" type="button">Backyard biodiversity</button>
