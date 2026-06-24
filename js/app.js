@@ -91,12 +91,47 @@ function regionFromZip(zip){
   return {name:"Colorado Springs / Cheyenne Mtn, CO",shortName:"Colorado Springs / Front Range",status:"target",locations:["80906"],note:"ZIP 80906 — Colorado Springs (Cheyenne Mountain area); Front Range native plant palette."};
 }
 
+// Pool splash zone / salt edge (V4.3): infer salt tolerance from existing tags/conditions,
+// layered with a small hand-curated override list for well-documented exceptions. Only ever
+// consulted when condition === "poolSplash"; it does not affect any other micro-site condition.
+const saltOverride = {
+  // boosts — salt-tolerant standouts the inference misses or under-rates
+  "dwarf-palmetto":"tolerant-strong",               // coastal palm, strong salt-spray tolerance
+  "ca-pigeon-point-coyote-brush":"tolerant-strong", // Baccharis pilularis, coastal-bluff / salt-edge species
+  "ca-california-aster":"tolerant-mod",             // Symphyotrichum chilense, coastal salt-marsh edge
+  "co-rabbitbrush":"tolerant-strong",               // thrives in saline / alkaline Front Range soils
+  "ky-black-chokeberry":"tolerant-mod",             // Aronia, moderate salt tolerance, roadside / rain-garden use
+  "ky-winterberry":"tolerant-mod",                  // Ilex verticillata, moderate salt + wet tolerance
+  "possumhaw-holly":"tolerant-mod",                 // Ilex decidua, Gulf-coastal, salt / flood tolerant
+  "blue-flag-iris":"tolerant-mod",                  // Iris virginica tolerates brackish / saline marsh
+  // demotes — salt-sensitive standouts the inference rates tolerant or neutral
+  "eastern-redbud":"sensitive",                     // Cercis canadensis, low salt tolerance
+  "ky-redbud":"sensitive",                          // same species; otherwise tolerant via urbanHeat tag
+  "ca-western-redbud":"sensitive",                  // Cercis occidentalis, salt-sensitive
+  "ca-showy-milkweed":"sensitive",                  // Asclepias speciosa, salt-sensitive moist meadow
+  "ky-swamp-milkweed":"sensitive",                  // Asclepias incarnata, wetland, salt-sensitive
+  "cardinal-flower":"sensitive",                    // Lobelia cardinalis, wetland, salt-sensitive
+  "ky-new-york-ironweed":"sensitive"                // Vernonia, wet-meadow, salt-sensitive
+};
+function saltLean(p){
+  const o = saltOverride[p.id];
+  if(o) return o;
+  const cond = p.conditions || [], tags = p.tags || [], moist = p.moist || [];
+  const inC = (...v) => v.some(x => cond.includes(x));
+  const inT = (...v) => v.some(x => tags.includes(x));
+  if(inC("coastalExposure") || inT("coastal tolerant")) return "tolerant-strong";
+  if((moist.length === 1 && moist[0] === "wet") || inC("wetMeadow")) return "sensitive";
+  if(inT("grass","grassland","prairie","dry soil","drought tolerant","xeric","xeric groundcover","succulent","heat humidity") || inC("xeric","rockGarden","highDesert","serpentineLean","urbanHeat")) return "tolerant-mod";
+  if(inC("woodlandShade","oakUnderstory","shadedSite") || inT("shade","woodland edge","shade grass")) return "sensitive";
+  return "neutral";
+}
 function conditionMatches(p, inputs, strict){
   const c = inputs.condition;
   if(c === "standard") return true;
   if(c === "rainGarden") return p.moist.includes("wet") || p.conditions.includes("rainGarden");
   if(c === "floodEdge") return p.moist.includes("wet") || p.conditions.includes("rainGarden") || p.conditions.includes("heavyClay");
   if(c === "coastalExposure") return p.conditions.includes("coastalExposure") || p.soil.includes("sandy");
+  if(c === "poolSplash") return saltLean(p) !== "sensitive";
   if(c === "heavyClay" || c === "gumboClay") return p.soil.includes("clay") || p.conditions.includes("heavyClay");
   if(c === "urbanHeat" || c === "streetHellstrip") return p.conditions.includes("urbanHeat") || p.tags.includes("heat humidity") || p.moist.includes("dry") || p.soil.includes("sandy");
   if(c === "patioContainer") return (p.spread[1] <= 48 && p.height[1] <= 72 && !p.aggressive) || p.layer === "front";
@@ -127,6 +162,7 @@ function conditionBonus(p, inputs){
   if(c === "gumboClay" || c === "heavyClay") return p.soil.includes("clay") ? 3 : 1;
   if(c === "postFreeze") return p.tags.includes("grass") || p.tags.includes("overwintering habitat") ? 3 : 1;
   if(c === "coastalExposure") return p.conditions.includes("coastalExposure") ? 4 : 1;
+  if(c === "poolSplash"){ const l = saltLean(p); return l === "tolerant-strong" ? 4 : l === "tolerant-mod" ? 3 : 1; }
   if(c === "xeric") return p.moist.includes("dry") ? 3 : 1;
   if(c === "rockGarden") return (p.conditions.includes("rockGarden") || p.soil.includes("sandy")) ? 3 : 1;
   if(c === "highDesert") return (p.conditions.includes("highDesert") || p.conditions.includes("xeric")) ? 3 : 1;
@@ -651,6 +687,7 @@ function waterPlan(inputs){
   if(inputs.moisture === "dry" || inputs.condition === "streetHellstrip" || inputs.condition === "urbanHeat") plan.push("Dry or reflected-heat sites need slower, deeper watering during establishment so the root ball rehydrates, not just the mulch surface.");
   if(inputs.soil === "clay" || inputs.condition === "gumboClay" || inputs.condition === "heavyClay") plan.push("Clay can create a wet outer hole and a dry nursery root ball; check the root ball itself before adding more water.");
   if(inputs.moisture === "wet" || inputs.condition === "rainGarden" || inputs.condition === "floodEdge") plan.push("Wet-site plants still need establishment water during dry spells, but crowns should remain at grade rather than buried or constantly submerged.");
+  if(inputs.condition === "poolSplash") plan.push("In the saltwater-pool splash strip, water deeply with fresh water during dry spells to flush accumulated salt below the root zone, and keep filter backwash and pool-drain water out of the bed.");
   if(!plan.length) plan.push("For average soil, water deeply at planting and keep the root ball evenly moist while new roots move into surrounding soil.");
   return unique(plan);
 }
@@ -668,6 +705,7 @@ function mulchPlan(inputs){
   const items = ["Use mulch as a weed and moisture buffer, not as a mound against crowns or stems.", "Keep a visible planting ring around new crowns so rot, ants, and hidden stem damage are easier to spot.", "Hand-weed early before small native plugs are shaded or crowded by turf and warm-season weeds."];
   if(inputs.condition === "rainGarden" || inputs.condition === "floodEdge") items.push("In flow paths, use mulch carefully so it does not wash over crowns or clog the low point after storms.");
   if(inputs.condition === "streetHellstrip" || inputs.condition === "urbanHeat") items.push("Along pavement, mulch reduces surface heating, but avoid piling it into curb runoff areas.");
+  if(inputs.condition === "poolSplash") items.push("Keep bed edging and mulch from channeling salty splash-out or backwash into the planting; a slight grade away from the pool helps salt drain rather than concentrate in the root zone.");
   if(inputs.zip === "80906") items.push("Organic wood mulch works well for higher-water or woodland-edge beds; for truly xeric plantings, consider gravel mulch — it keeps soil lean and well-drained between rains.");
   if(inputs.zip === "94503") items.push("For summer-dry California natives, use a coarse organic mulch (or leaf litter under oaks) to hold winter rain; keep mulch off crowns and avoid summer irrigation that can rot drought-adapted roots. In firewise/defensible-space zones, prefer non-combustible gravel or well-irrigated groundcover within 5 feet of structures.");
   if(inputs.zip === "40241") items.push("Shredded leaf litter or fine hardwood mulch suits Louisville-area woodland and Bluegrass beds; it feeds the heavy clay soil as it breaks down. Leave fall leaves where you can — they shelter overwintering pollinators and mimic the deciduous-woodland floor these natives evolved with.");
@@ -698,6 +736,11 @@ function failureWarnings(inputs, palette){
   }
   if(inputs.condition === "streetHellstrip" || inputs.condition === "urbanHeat") warnings.push("Reflected heat can cook small plugs; plant in cooler weather or protect/check more often during the first summer.");
   if(inputs.condition === "patioContainer") warnings.push("Containers fail quickly without drainage; no closed pots or permanently wet saucers.");
+  if(inputs.condition === "poolSplash"){
+    warnings.push("Pool splash zone: plant only salt-tolerant species in the first few feet of the splash and evaporation strip; keep salt-sensitive plants outside it.");
+    warnings.push("Route filter backwash and pool-drain water to a sewer or approved drain, not into a planting bed — that water is far saltier than splash-out and can kill even salt-tolerant plants.");
+    warnings.push("Salt impact is negligible beyond the splash zone; a few feet back from the pool, plant normally for the region.");
+  }
   if(inputs.moisture === "wet" || inputs.condition === "rainGarden" || inputs.condition === "floodEdge") warnings.push("Wet-tolerant does not mean the crown should be buried in saturated mulch.");
   if(palette.some(p=>p.aggressive)) warnings.push("Aggressive native spreaders are useful habitat plants only if you actively define their boundary.");
   if(inputs.snakeAware) warnings.push("Snake-aware mode needs visible, open bases: avoid wood piles, dense low groundcover, heavy leaf litter against the house, and rodent-feeding clutter near the planting.");
@@ -792,7 +835,7 @@ function renderDataQA(inputs, palette){
     return `<tr><td><strong>${esc(p.common)}</strong><br><span class="sciname">${esc(p.sci)}</span></td><td><span class="chip ${f.cls}">${esc(f.label)}</span><br>${f.reasons.map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</td><td><strong>${esc(d.overall)}</strong><br>${d.cautions.map(c=>`<span class="chip ${c.includes("caution")||c.includes("toxicity")||c.includes("spread")?"red":""}">${esc(c)}</span>`).join("")}</td><td>${esc(d.specificity)}<br><span class="muted">${esc(d.source)}</span></td></tr>`;
   }).join("");
   const excludedRows = excluded.map(x=>`<tr><td><strong>${esc(x.p.common)}</strong><br><span class="sciname">${esc(x.p.sci)}</span></td><td>${x.reasons.slice(0,5).map(r=>`<span class="chip fit-excluded">${esc(r)}</span>`).join("")}</td><td>${esc(topRoles(x.p))}</td></tr>`).join("");
-  return `<div class="info"><strong>V4.2 data QA:</strong> this tab makes the prototype's confidence limits visible. It is not a fully sourced plant database yet; it shows which records are solid starter candidates, which need exact species/local nursery verification, and why some candidates were excluded.</div>
+  return `<div class="info"><strong>V4.3 data QA:</strong> this tab makes the prototype's confidence limits visible. It is not a fully sourced plant database yet; it shows which records are solid starter candidates, which need exact species/local nursery verification, and why some candidates were excluded.</div>
   <div class="qa-grid">
     <div class="qa-card"><strong>${palette.length}</strong><span class="muted">selected species</span></div>
     <div class="qa-card"><strong>${high}/${palette.length}</strong><span class="muted">higher-confidence starter records</span></div>
@@ -822,7 +865,7 @@ function renderCarePlan(inputs, palette){
     ${renderListCard("Pruning / cutback", pruningPlan(inputs, palette))}
     ${renderListCard("Intentional habitat cues", messyCues(inputs, palette))}
     ${renderListCard("Common planting failure warnings", failureWarnings(inputs, palette), "logic-card caution")}
-  </div><p class="muted">This is design-adjacent establishment guidance. V4.2 does not create reminders, journals, or care logs.</p>`;
+  </div><p class="muted">This is design-adjacent establishment guidance. V4.3 does not create reminders, journals, or care logs.</p>`;
 }
 
 function bearBadge(p, inputs){
@@ -1603,7 +1646,7 @@ function renderRegionNotes(inputs, palette, region){
     <div class="metric"><strong>${late}</strong><span class="muted">species with Sep–Nov bloom</span></div>
     <div class="metric"><strong>${wet}</strong><span class="muted">species tolerant of wet/average sites</span></div>
   </div>
-  <p><strong>Design logic in V4.2:</strong> prioritize locally sourced natives, layered habitat, long bloom continuity, seasonal spring/summer/fall balance, micro-site condition matching, regional nectar continuity, and bird-supporting structure without turning the app into a tracker, journal, or recurring planner.</p>
+  <p><strong>Design logic in V4.3:</strong> prioritize locally sourced natives, layered habitat, long bloom continuity, seasonal spring/summer/fall balance, micro-site condition matching, regional nectar continuity, and bird-supporting structure without turning the app into a tracker, journal, or recurring planner.</p>
   <p><strong>Multi-goal behavior:</strong> checkbox goals are combined. Bees + butterflies, for example, boosts both high pollen/nectar plants and butterfly nectar/host plants rather than forcing one primary goal.</p>
   <p><strong>Squirrel-aware behavior:</strong> squirrel-aware mode suppresses the highest berry/fruit wildlife plants unless the user explicitly selects cardinals/songbirds. It does not promise squirrel exclusion.</p>
   <p><strong>Mosquito-aware behavior:</strong> the add-on places aromatic, pollinator-compatible plants near patios or edges for human comfort. It does not claim that plants growing in the bed will materially reduce mosquito bites.</p>
@@ -1827,6 +1870,7 @@ function renderTesting(inputs){
 
 function renderChangelog(){
   const changes = [
+    ["V4.3", "Adds an opt-in \"Pool splash zone / salt edge\" micro-site condition across all four regions, for the narrow salt-concentrated strip at the edge of a saltwater pool (~3,200 ppm) where splash-out and evaporation build up salt. It biases the palette toward salt-tolerant plants and away from salt-sensitive ones using salt tolerance inferred from existing traits/tags — coastal-tagged, grass, dry/lean-soil, and urban-heat plants lean salt-tolerant; woodland-shade and obligate-wet/bog species lean salt-sensitive — plus a small hand-curated override list (~15 plants) for well-documented exceptions. Surfaces splash-zone guidance: plant salt-tolerant species in the first few feet, route filter backwash and pool-drain water to a drain rather than a bed, and treat salt as negligible beyond the splash zone. Purely additive: the four existing regions and every pre-existing condition behave exactly as before."],
     ["V4.2", "Four-region prototype: adds Louisville / East End, Kentucky (40241) as a humid-continental, cold-winter / humid-summer region with 100+ Kentucky-native woodland and Bluegrass-region plants alongside Houston / Gulf Coast (77429), Colorado Springs / Front Range (80906), and American Canyon / North Bay California (94503). Includes limestone-clay and woodland-shade micro-site conditions, rain-garden and flood-edge handling for the Ohio Valley, Eastern deciduous-woodland image-prompt framing, and monarch guidance favoring regional native milkweeds over tropical milkweed."],
     ["V4.1", "Three-region prototype: adds American Canyon / North Bay California (94503) as a Mediterranean, summer-dry region with ~80 California-native plants alongside Houston / Gulf Coast (77429) and Colorado Springs / Front Range (80906). Includes summer-dry moisture and watering guidance, California micro-site conditions (summer-dry, oak understory, lean/serpentine soil, wildfire-wise/defensible space), heavy deer-pressure awareness, and monarch guidance favoring narrowleaf milkweed (Asclepias fascicularis) over tropical milkweed."],
     ["V4.0", "Two-region prototype: adds Colorado Springs / Front Range (80906) native plant set alongside Houston / Gulf Coast (77429). ZIP input now validates strictly — unsupported ZIPs show a friendly message instead of showing all plants. Condition dropdown updates dynamically when ZIP changes. Houston-specific wording generalized throughout."],
@@ -1861,6 +1905,7 @@ const regionConditions = {
     {value:"rainGarden",label:"Rain garden / swale: catches runoff after rain"},
     {value:"floodEdge",label:"Flood-prone edge"},
     {value:"coastalExposure",label:"Coastal wind / salt exposure"},
+    {value:"poolSplash",label:"Pool splash zone / salt edge"},
     {value:"heavyClay",label:"Heavy clay / slow drainage"},
     {value:"patioContainer",label:"Patio / container cluster"},
     {value:"postFreeze",label:"Post-freeze recovery planting"},
@@ -1873,6 +1918,7 @@ const regionConditions = {
     {value:"highDesert",label:"High desert / rocky / alkaline"},
     {value:"shadedSite",label:"Shaded site / north-facing"},
     {value:"urbanHeat",label:"Urban heat / reflected pavement"},
+    {value:"poolSplash",label:"Pool splash zone / salt edge"},
     {value:"patioContainer",label:"Patio / container cluster"},
     {value:"hoaFront",label:"HOA-visible front yard"}
   ],
@@ -1884,6 +1930,7 @@ const regionConditions = {
     {value:"serpentineLean",label:"Lean / rocky / serpentine soil"},
     {value:"firewise",label:"Wildfire-wise / defensible space"},
     {value:"rainGarden",label:"Winter rain garden / swale: catches runoff after rain"},
+    {value:"poolSplash",label:"Pool splash zone / salt edge"},
     {value:"urbanHeat",label:"Urban heat / reflected sun"},
     {value:"patioContainer",label:"Patio / container cluster"},
     {value:"hoaFront",label:"HOA-visible front yard"}
@@ -1894,6 +1941,7 @@ const regionConditions = {
     {value:"woodlandShade",label:"Woodland shade / deciduous understory"},
     {value:"rainGarden",label:"Rain garden / swale: catches runoff after rain"},
     {value:"floodEdge",label:"Flood-prone / creek edge"},
+    {value:"poolSplash",label:"Pool splash zone / salt edge"},
     {value:"urbanHeat",label:"Urban heat / reflected sun"},
     {value:"patioContainer",label:"Patio / container cluster"},
     {value:"postFreeze",label:"Post-freeze recovery planting"},
@@ -2123,7 +2171,7 @@ function soilLabel(s, zip){
   if(zip === "40241") return {unknown:"unknown soil", clay:"limestone clay / heavy clay", loam:"silt loam / clay loam", sandy:"sandy / rocky / well-drained"}[s] || s;
   return {unknown:"unknown soil", clay:"clay / gumbo", loam:"loam", sandy:"sandy"}[s] || s;
 }
-function conditionLabel(c){return {standard:"standard yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard", xeric:"xeric / drought-adapted", rockGarden:"rock garden / excellent drainage", highDesert:"high desert / rocky / alkaline", shadedSite:"shaded site / north-facing", summerDry:"summer-dry / no summer irrigation", clayAdobe:"heavy clay / adobe", oakUnderstory:"oak understory / dry shade", serpentineLean:"lean / rocky / serpentine soil", firewise:"wildfire-wise / defensible space", limestoneClay:"limestone clay / heavy clay", woodlandShade:"woodland shade / deciduous understory"}[c] || c;}
+function conditionLabel(c){return {standard:"standard yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", poolSplash:"pool splash zone / salt edge", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard", xeric:"xeric / drought-adapted", rockGarden:"rock garden / excellent drainage", highDesert:"high desert / rocky / alkaline", shadedSite:"shaded site / north-facing", summerDry:"summer-dry / no summer irrigation", clayAdobe:"heavy clay / adobe", oakUnderstory:"oak understory / dry shade", serpentineLean:"lean / rocky / serpentine soil", firewise:"wildfire-wise / defensible space", limestoneClay:"limestone clay / heavy clay", woodlandShade:"woodland shade / deciduous understory"}[c] || c;}
 function goalLabel(goal){
   return {bees:"Bee Pollinator", butterflies:"Butterfly Pollinator", monarchs:"Monarch Habitat", hummingbirds:"Hummingbird Nectar", cardinals:"Cardinal / Songbird Habitat", biodiversity:"Maximum Biodiversity"}[goal] || "Habitat";
 }
