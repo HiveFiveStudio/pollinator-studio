@@ -84,6 +84,12 @@ function targetSpeciesCount(area, inputs){
 }
 
 function regionFromZip(zip){
+  // Irish Eircode support (additive): a routing key + identifier like "N39 YF64" is matched
+  // here, before the digit-strip below would mangle it. Known Eircode N39 YF64 (Ballymahon,
+  // Co. Longford) routes to a recognized-but-not-yet-populated placeholder; its native palette
+  // is added in a later commit. US ZIP handling below is unchanged.
+  const eir = String(zip).toUpperCase().replace(/\s+/g, "");
+  if(eir === "N39YF64") return {name:"Ballymahon, Co. Longford, IE",shortName:"Ballymahon / Co. Longford",status:"recognized",locations:[],note:"Eircode N39 YF64 — Ballymahon, Co. Longford, Ireland. Region recognized; native plant palette not yet populated (coming in a later commit)."};
   const z = String(zip).replace(/\D/g, "").slice(0,5);
   if(z === "77429") return {name:"Houston / Cypress, TX",shortName:"Houston / Gulf Coast",status:"target",locations:["77429"],note:"ZIP 77429 — Houston area (Cypress, TX); Gulf Coast native plant palette."};
   if(z === "94503") return {name:"American Canyon, CA",shortName:"American Canyon / North Bay",status:"target",locations:["94503"],note:"ZIP 94503 — American Canyon, CA (southern Napa County / SF North Bay); Mediterranean, summer-dry California-native palette."};
