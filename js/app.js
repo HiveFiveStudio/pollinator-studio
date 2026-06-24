@@ -89,12 +89,20 @@ function regionFromZip(zip){
   // Co. Longford) routes to a recognized-but-not-yet-populated placeholder; its native palette
   // is added in a later commit. US ZIP handling below is unchanged.
   const eir = String(zip).toUpperCase().replace(/\s+/g, "");
-  if(eir === "N39YF64") return {name:"Ballymahon, Co. Longford, IE",shortName:"Ballymahon / Co. Longford",status:"recognized",locations:[],note:"Eircode N39 YF64 — Ballymahon, Co. Longford, Ireland. Region recognized; native plant palette not yet populated (coming in a later commit)."};
+  if(eir === "N39YF64") return {name:"Ballymahon, Co. Longford, IE",shortName:"Ballymahon / Co. Longford",status:"target",locations:["N39YF64"],note:"Eircode N39 YF64 — Ballymahon, Co. Longford, Ireland; mild oceanic-midlands climate, wet peaty/gley soils, Irish/European native palette."};
   const z = String(zip).replace(/\D/g, "").slice(0,5);
   if(z === "77429") return {name:"Houston / Cypress, TX",shortName:"Houston / Gulf Coast",status:"target",locations:["77429"],note:"ZIP 77429 — Houston area (Cypress, TX); Gulf Coast native plant palette."};
   if(z === "94503") return {name:"American Canyon, CA",shortName:"American Canyon / North Bay",status:"target",locations:["94503"],note:"ZIP 94503 — American Canyon, CA (southern Napa County / SF North Bay); Mediterranean, summer-dry California-native palette."};
   if(z === "40241") return {name:"Louisville / East End, KY",shortName:"Louisville / Bluegrass",status:"target",locations:["40241"],note:"ZIP 40241 — Louisville, KY (East End); humid continental, cold-winter / humid-summer Eastern woodland and Bluegrass-region native palette."};
   return {name:"Colorado Springs / Cheyenne Mtn, CO",shortName:"Colorado Springs / Front Range",status:"target",locations:["80906"],note:"ZIP 80906 — Colorado Springs (Cheyenne Mountain area); Front Range native plant palette."};
+}
+
+// Region key (additive): Eircodes have no digits to strip, so map the known Irish
+// Eircode to its own key; every other region keeps the existing 5-digit ZIP key.
+function regionKey(zip){
+  const eir = String(zip).toUpperCase().replace(/\s+/g, "");
+  if(eir === "N39YF64") return "N39YF64";
+  return String(zip).replace(/\D/g, "").slice(0,5);
 }
 
 // Pool splash zone / salt edge (V4.3): infer salt tolerance from existing tags/conditions,
@@ -154,6 +162,10 @@ function conditionMatches(p, inputs, strict){
   if(c === "firewise") return p.conditions.includes("firewise") || (!p.aggressive && p.height[1] <= 72);
   if(c === "limestoneClay") return p.soil.includes("clay") || p.conditions.includes("limestoneClay") || p.conditions.includes("heavyClay");
   if(c === "woodlandShade") return p.conditions.includes("woodlandShade") || p.sun.includes("part") || p.sun.includes("shade");
+  if(c === "boggyPeat") return p.moist.includes("wet") || p.soil.includes("peat") || p.conditions.includes("boggyPeat") || p.tags.includes("wet soil");
+  if(c === "gleyClay") return p.soil.includes("clay") || p.conditions.includes("gleyClay") || p.conditions.includes("heavyClay");
+  if(c === "hedgerowEdge") return p.conditions.includes("hedgerowEdge") || p.sun.includes("part") || p.sun.includes("shade");
+  if(c === "exposedWind") return p.conditions.includes("exposedWind") || p.tags.includes("coastal tolerant") || p.tags.includes("drought tolerant") || p.tags.includes("grass") || p.height[1] <= 48;
   return !strict;
 }
 
@@ -180,6 +192,10 @@ function conditionBonus(p, inputs){
   if(c === "firewise") return p.conditions.includes("firewise") ? 4 : 1;
   if(c === "limestoneClay") return p.soil.includes("clay") ? 3 : 1;
   if(c === "woodlandShade") return (p.conditions.includes("woodlandShade") || p.sun.includes("shade")) ? 3 : ((p.sun.includes("part")) ? 2 : 1);
+  if(c === "boggyPeat") return (p.moist.includes("wet") || p.soil.includes("peat") || p.tags.includes("wet soil")) ? 4 : 1;
+  if(c === "gleyClay") return p.soil.includes("clay") ? 3 : 1;
+  if(c === "hedgerowEdge") return (p.sun.includes("part") || p.sun.includes("shade")) ? 3 : 1;
+  if(c === "exposedWind") return (p.tags.includes("grass") || p.tags.includes("drought tolerant") || p.tags.includes("coastal tolerant") || p.height[1] <= 48) ? 3 : 1;
   return 1;
 }
 
@@ -442,7 +458,7 @@ function renderNoMatches(inputs, reason){
     <div class="info"><strong>How to resolve:</strong> try turning off Native-only temporarily, switch from Beginner to Standard, remove pet/toxicity-review or deer constraints, choose average moisture instead of a specialized micro-site, or select a less restrictive snake/squirrel option.</div>
     <div class="tabs no-print"><button type="button" class="tab active" onclick="PS.showTab('risks')">Warnings</button><button type="button" class="tab" onclick="PS.showTab('region')">Region notes</button><button type="button" class="tab" onclick="PS.showTab('test')">Test this app</button></div>
     <section id="tab-risks" class="tab-view active"><h3>Why no design appeared</h3><p>The hard filters eliminated the available starter plant records. This is preferable to showing a misleading score or a zero-plant design.</p><ul class="why-list"><li>Reduce one constraint at a time so the tester can see which filter is excluding the palette.</li><li>For production, this state should become less common as the plant database grows.</li></ul></section>
-    <section id="tab-region" class="tab-view"><h3>Prototype data limit</h3><p>Pollinator Studio uses region-specific starter plant sets (77429: Gulf Coast; 80906: Front Range; 94503: California North Bay; 40241: Louisville / Kentucky Bluegrass). A production version should use a larger source-verified plant database.</p></section>
+    <section id="tab-region" class="tab-view"><h3>Prototype data limit</h3><p>Pollinator Studio uses region-specific starter plant sets (77429: Gulf Coast; 80906: Front Range; 94503: California North Bay; 40241: Louisville / Kentucky Bluegrass; N39YF64: Ballymahon, Co. Longford, Ireland). A production version should use a larger source-verified plant database.</p></section>
     <section id="tab-test" class="tab-view">${renderTesting(inputs)}</section>`;
   $('results').innerHTML = html;
   $('results').classList.remove('empty');
@@ -464,7 +480,7 @@ function render(inputs, palette, score){
     if(p.bear && inputs.bearMode === "reduce") warnings.push(`${p.common} produces berries that attract black bears (per Colorado Parks and Wildlife); it is included because it matched site and bird-habitat criteria, but was down-ranked by Reduce bear attraction mode.`);
     if(p.bear && inputs.bearMode === "attract") warnings.push(`${p.common} is a berry-producing bear-food plant. Colorado Parks and Wildlife strongly discourages intentionally attracting bears to residential yards.`);
   });
-  if(hasGoal(inputs, "cardinals")) warnings.push("Cardinals are birds, not pollinators. This goal optimizes for seed/berry value, cover, and layered structure.");
+  if(hasGoal(inputs, "cardinals")) warnings.push((regionKey(inputs.zip) === "N39YF64") ? "Songbirds (robins, finches, tits) are not pollinators. This goal optimizes for seed/berry value, hedgerow cover, and layered native structure." : "Cardinals are birds, not pollinators. This goal optimizes for seed/berry value, cover, and layered structure.");
   if(inputs.squirrelAware) warnings.push("Squirrel-aware mode avoids intentional squirrel attractors, but bird-supporting seed heads and berries cannot fully exclude squirrels.");
   if(inputs.bearMode === "reduce" && (hasGoal(inputs, "cardinals") || hasGoal(inputs, "biodiversity")) && palette.some(p => p.bear)) warnings.push("Conflict: berry/cover plants that support birds (cardinals, biodiversity) are also bear-food sources. Bear attraction is minimized but these plants may still appear because no Colorado-appropriate substitute provides equivalent bird habitat.");
 
@@ -474,7 +490,7 @@ function render(inputs, palette, score){
     <p class="eyebrow">Generated concept</p>
     <h2>${esc(title)}</h2>
     <p>A ${esc(inputs.length)} × ${esc(inputs.depth)} foot ${esc(layoutTypeLabel(inputs.layoutType))} in ${siteLabel(inputs.sun)} for <strong>${esc(region.name)}</strong>, optimized for ${esc(goalListText(inputs).toLowerCase())}. Design mode: <strong>${esc(mode.label)}</strong>. The palette uses ${palette.length} plant species and about ${totalPlants} total plants.</p>
-    <div class="pillbar">${makeSystemPills(palette)}</div>
+    <div class="pillbar">${makeSystemPills(palette, inputs)}</div>
     <div class="action-row no-print"><button type="button" class="secondary" onclick="PS.showTab('summary')">Show one-page summary</button><button type="button" class="secondary" onclick="PS.printDesignSheet()">Print / save PDF</button><button type="button" class="secondary" onclick="PS.showTab('prompt')">Visual prompt</button></div>
     <div class="tab-guide no-print"><strong>Next step:</strong> choose a tab below. Start with <span class="kbd">Layout</span> for the planting map, <span class="kbd">Plant palette</span> for plant cards, or <span class="kbd">Warnings</span> for review notes.</div>
     <div class="tabs no-print">
@@ -513,7 +529,7 @@ function render(inputs, palette, score){
     <div id="tab-prompt" class="tab-view">${renderPrompt(inputs, palette, region)}</div>
     <div id="tab-test" class="tab-view">${renderTesting(inputs)}</div>
     <div id="tab-changelog" class="tab-view">${renderChangelog()}</div>
-    <p class="muted"><strong>Prototype note:</strong> Pollinator Studio uses region-specific starter data sets for 77429 (Houston / Gulf Coast), 80906 (Colorado Springs / Front Range), 94503 (American Canyon / North Bay California), and 40241 (Louisville / Kentucky Bluegrass). Plant suitability, cultivar behavior, toxicity, local native range, and nursery availability still need expert/source validation before production use.</p>
+    <p class="muted"><strong>Prototype note:</strong> Pollinator Studio uses region-specific starter data sets for 77429 (Houston / Gulf Coast), 80906 (Colorado Springs / Front Range), 94503 (American Canyon / North Bay California), and 40241 (Louisville / Kentucky Bluegrass), plus N39YF64 (Ballymahon, Co. Longford, Ireland). Plant suitability, cultivar behavior, toxicity, local native range, and nursery availability still need expert/source validation before production use.</p>
   `;
   $("results").innerHTML = html;
   const resultsEl = $("results");
@@ -524,29 +540,31 @@ function render(inputs, palette, score){
 
 function unique(arr){return [...new Set(arr)];}
 
-function makeSystemPills(palette){
+function makeSystemPills(palette, inputs){
+  const ie = inputs && isIreland(inputs);
   const checks = [
     ["Bee nectar/pollen", palette.some(p=>p.roles.bees>=8)],
-    ["Butterfly nectar", palette.some(p=>p.roles.butterflies>=8)],
-    ["Monarch host", palette.some(p=>p.tags.includes("monarch host"))],
-    ["Fall migration nectar", palette.some(p=>p.tags.includes("monarch nectar") || p.tags.includes("late nectar") || p.tags.includes("fall bloom"))],
-    ["Hummingbird nectar", palette.some(p=>p.roles.hummingbirds>=8)],
-    ["Songbird seed/berries", palette.some(p=>p.tags.includes("songbird seed") || p.tags.includes("berries") || p.tags.includes("seed heads"))],
-    ["Shelter/structure", palette.some(p=>p.tags.includes("structure") || p.tags.includes("cover") || p.tags.includes("overwintering habitat") || p.tags.includes("grass"))],
-    ["Aromatic seating edge", palette.some(p=>p.tags.includes("aromatic edge") || p.tags.includes("mint family"))],
-    ["Open-base / snake-aware", palette.some(p=>p.tags.includes("open base") || p.tags.includes("spiky edge") || p.tags.includes("snake-aware candidate"))]
+    ["Butterfly nectar", palette.some(p=>p.roles.butterflies>=8)]
   ];
+  if(!ie) checks.push(["Monarch host", palette.some(p=>p.tags.includes("monarch host"))]);
+  checks.push([ie ? "Autumn / late nectar" : "Fall migration nectar", palette.some(p=>p.tags.includes("monarch nectar") || p.tags.includes("late nectar") || p.tags.includes("fall bloom"))]);
+  checks.push([ie ? "Hawk-moth nectar" : "Hummingbird nectar", palette.some(p=>p.roles.hummingbirds>=8)]);
+  checks.push(["Songbird seed/berries", palette.some(p=>p.tags.includes("songbird seed") || p.tags.includes("berries") || p.tags.includes("seed heads"))]);
+  checks.push(["Shelter/structure", palette.some(p=>p.tags.includes("structure") || p.tags.includes("cover") || p.tags.includes("overwintering habitat") || p.tags.includes("grass"))]);
+  checks.push(["Aromatic seating edge", palette.some(p=>p.tags.includes("aromatic edge") || p.tags.includes("mint family"))]);
+  checks.push(["Open-base / snake-aware", palette.some(p=>p.tags.includes("open base") || p.tags.includes("spiky edge") || p.tags.includes("snake-aware candidate"))]);
   return checks.map(([label,on])=>`<span class="pill">${on?"✓":"—"} ${label}</span>`).join("");
 }
 
 
-function topRoles(p){
+function topRoles(p, inputs){
+  const ie = inputs && isIreland(inputs);
   return [
     ["Bees", p.roles.bees],
     ["Butterflies", p.roles.butterflies],
     ["Monarchs", p.roles.monarchs],
-    ["Hummingbirds", p.roles.hummingbirds],
-    ["Cardinals/songbirds", p.roles.cardinals]
+    [ie ? "Hawk-moth" : "Hummingbirds", p.roles.hummingbirds],
+    [ie ? "Songbirds" : "Cardinals/songbirds", p.roles.cardinals]
   ].sort((a,b)=>b[1]-a[1]).slice(0,2).map(x=>x[0]).join(" + ");
 }
 
@@ -565,7 +583,7 @@ function whySelected(p, inputs){
   if(hasGoal(inputs, "bees") && p.roles.bees >= 8) reasons.push("prioritizes bee pollen/nectar value");
   if(hasGoal(inputs, "butterflies") && p.roles.butterflies >= 8) reasons.push("prioritizes butterfly nectar value");
   if(hasGoal(inputs, "monarchs") && p.tags.includes("monarch host")) reasons.push("adds a native monarch host plant");
-  if(hasGoal(inputs, "hummingbirds") && (p.roles.hummingbirds >= 8 || p.color === "red")) reasons.push("prioritizes hummingbird nectar cues");
+  if(hasGoal(inputs, "hummingbirds") && (p.roles.hummingbirds >= 8 || p.color === "red")) reasons.push(isIreland(inputs) ? "prioritizes hawk-moth nectar cues" : "prioritizes hummingbird nectar cues");
   if(hasGoal(inputs, "cardinals") && p.roles.cardinals >= 6) reasons.push("adds food or cover for cardinals/songbirds");
   if(hasGoal(inputs, "biodiversity") && p.tags.includes("late nectar")) reasons.push("extends late-season nectar for migration");
   if(hasGoal(inputs, "biodiversity") && p.tags.includes("overwintering habitat")) reasons.push("keeps overwintering structure in the design");
@@ -715,6 +733,7 @@ function mulchPlan(inputs){
   if(inputs.zip === "80906") items.push("Organic wood mulch works well for higher-water or woodland-edge beds; for truly xeric plantings, consider gravel mulch — it keeps soil lean and well-drained between rains.");
   if(inputs.zip === "94503") items.push("For summer-dry California natives, use a coarse organic mulch (or leaf litter under oaks) to hold winter rain; keep mulch off crowns and avoid summer irrigation that can rot drought-adapted roots. In firewise/defensible-space zones, prefer non-combustible gravel or well-irrigated groundcover within 5 feet of structures.");
   if(inputs.zip === "40241") items.push("Shredded leaf litter or fine hardwood mulch suits Louisville-area woodland and Bluegrass beds; it feeds the heavy clay soil as it breaks down. Leave fall leaves where you can — they shelter overwintering pollinators and mimic the deciduous-woodland floor these natives evolved with.");
+  if(inputs.zip === "N39YF64") items.push("On peaty or gley midland soil, use a light leaf-litter or fine bark mulch and keep it well off crowns; never bury the crowns of bog or wet-meadow plants under mulch or sediment after heavy rain. Leave autumn leaves and standing seed heads through winter for overwintering pollinators, as the All-Ireland Pollinator Plan advises.");
   return items;
 }
 
@@ -840,7 +859,7 @@ function renderDataQA(inputs, palette){
     const d = dataConfidence(p);
     return `<tr><td><strong>${esc(p.common)}</strong><br><span class="sciname">${esc(p.sci)}</span></td><td><span class="chip ${f.cls}">${esc(f.label)}</span><br>${f.reasons.map(r=>`<span class="chip">${esc(r)}</span>`).join("")}</td><td><strong>${esc(d.overall)}</strong><br>${d.cautions.map(c=>`<span class="chip ${c.includes("caution")||c.includes("toxicity")||c.includes("spread")?"red":""}">${esc(c)}</span>`).join("")}</td><td>${esc(d.specificity)}<br><span class="muted">${esc(d.source)}</span></td></tr>`;
   }).join("");
-  const excludedRows = excluded.map(x=>`<tr><td><strong>${esc(x.p.common)}</strong><br><span class="sciname">${esc(x.p.sci)}</span></td><td>${x.reasons.slice(0,5).map(r=>`<span class="chip fit-excluded">${esc(r)}</span>`).join("")}</td><td>${esc(topRoles(x.p))}</td></tr>`).join("");
+  const excludedRows = excluded.map(x=>`<tr><td><strong>${esc(x.p.common)}</strong><br><span class="sciname">${esc(x.p.sci)}</span></td><td>${x.reasons.slice(0,5).map(r=>`<span class="chip fit-excluded">${esc(r)}</span>`).join("")}</td><td>${esc(topRoles(x.p, inputs))}</td></tr>`).join("");
   return `<div class="info"><strong>V4.3 data QA:</strong> this tab makes the prototype's confidence limits visible. It is not a fully sourced plant database yet; it shows which records are solid starter candidates, which need exact species/local nursery verification, and why some candidates were excluded.</div>
   <div class="qa-grid">
     <div class="qa-card"><strong>${palette.length}</strong><span class="muted">selected species</span></div>
@@ -896,7 +915,7 @@ function renderPalette(palette, inputs){
       <div><strong>Quantity</strong>${p.qty}</div>
       <div><strong>Layer</strong>${esc(layerLabel(p.layer))}</div>
       <div><strong>Bloom</strong>${esc(bloomWindow(p))}</div>
-      <div><strong>Wildlife value</strong>${esc(topRoles(p))}</div>
+      <div><strong>Wildlife value</strong>${esc(topRoles(p, inputs))}</div>
       <div><strong>Size</strong>${p.height[0]}–${p.height[1]} in. tall<br>${p.spread[0]}–${p.spread[1]} in. spread</div>
       <div><strong>Site fit</strong><span class="chip ${fitReview(p, inputs).cls}">${esc(fitReview(p, inputs).label)}</span><br>${fitReview(p, inputs).reasons.slice(0,2).map(r=>esc(r)).join("; ")}</div>
       <div><strong>Data QA</strong>${esc(dataConfidence(p).overall)}<br>${esc(speciesSpecificity(p).label)}</div>
@@ -999,8 +1018,8 @@ function gardenZones(inputs, palette){
     {tag:profile.structureTag, title:profile.structureTitle, plants:by(p=>p.layer==="back"), why:profile.structureWhy},
     {tag:"Middle drift", title:"Repeated nectar and host layer", plants:by(p=>p.layer==="middle"), why:"Groups of 3–7 repeated mid-height plants carry the main pollinator color and make the design legible."},
     {tag:"Low edge", title:"Front/outer edge", plants:by(p=>p.layer==="front"), why:profile.frontWhy},
-    {tag:"Host patch", title:"Monarch and butterfly host cluster", plants:by(p=>p.tags.includes("monarch host") || p.tags.includes("butterfly host")), why:"Host plants should be grouped so caterpillar chewing looks intentional, not like random plant damage."},
-    {tag:"Late nectar", title:"Fall migration nectar lane", plants:by(p=>p.tags.includes("late nectar") || p.tags.includes("monarch nectar") || p.bloom.includes(10)), why:inputs.zip === "80906" ? "Colorado Front Range fall nectar supports monarch migration and late-season native pollinators." : inputs.zip === "94503" ? "California North Bay late-summer and fall nectar supports monarch migration and resident native pollinators through the dry season." : inputs.zip === "40241" ? "Louisville-area late-summer and fall nectar supports monarch migration and late-season native pollinators before frost." : "Texas Gulf Coast fall nectar is important for monarch migration and late-season pollinators."}
+    {tag:"Host patch", title:(inputs.zip === "N39YF64") ? "Butterfly and moth host cluster" : "Monarch and butterfly host cluster", plants:by(p=>p.tags.includes("monarch host") || p.tags.includes("butterfly host")), why:"Host plants should be grouped so caterpillar chewing looks intentional, not like random plant damage."},
+    {tag:"Late nectar", title:(inputs.zip === "N39YF64") ? "Autumn nectar lane" : "Fall migration nectar lane", plants:by(p=>p.tags.includes("late nectar") || p.tags.includes("monarch nectar") || p.bloom.includes(10)), why:inputs.zip === "N39YF64" ? "In Ireland, late-summer and autumn nectar — above all ivy — is vital for bumblebees, the ivy bee, butterflies, and hoverflies building reserves before winter." : inputs.zip === "80906" ? "Colorado Front Range fall nectar supports monarch migration and late-season native pollinators." : inputs.zip === "94503" ? "California North Bay late-summer and fall nectar supports monarch migration and resident native pollinators through the dry season." : inputs.zip === "40241" ? "Louisville-area late-summer and fall nectar supports monarch migration and late-season native pollinators before frost." : "Texas Gulf Coast fall nectar is important for monarch migration and late-season pollinators."}
   ];
   if(inputs.condition === "rainGarden" || inputs.condition === "floodEdge" || inputs.layoutType === "rainPocket") zones.push({tag:"Wet pocket", title:"Rain-garden low point", plants:by(p=>p.moist.includes("wet") || p.tags.includes("wet soil")), why:"Wet-tolerant plants should sit in the lowest or slowest-draining part of the bed."});
   if(inputs.condition === "streetHellstrip" || inputs.condition === "urbanHeat" || inputs.layoutType === "curbStrip") zones.push({tag:"Heat edge", title:"Curb/reflected-heat buffer", plants:by(p=>p.conditions.includes("urbanHeat") || p.moist.includes("dry")), why:"Tougher plants go along pavement, driveways, walls, or curb edges where reflected heat is highest."});
@@ -1570,8 +1589,8 @@ function renderWhy(inputs, palette, score, region){
   boosts.push(["Seasonal coverage", [`Spring ${score.seasonal.spring.months}/3 months`, `Summer ${score.seasonal.summer.months}/3 months`, `Fall ${score.seasonal.fall.months}/3 months`]]);
   if(hostPlants.length) boosts.push(["Monarch host support", hostPlants]);
   if(lateNectar.length) boosts.push(["Late nectar continuity", lateNectar]);
-  if(hummingbird.length) boosts.push(["Hummingbird nectar", hummingbird]);
-  if(birds.length) boosts.push(["Songbird/cardinal structure", birds]);
+  if(hummingbird.length) boosts.push([isIreland(inputs) ? "Hawk-moth nectar" : "Hummingbird nectar", hummingbird]);
+  if(birds.length) boosts.push([isIreland(inputs) ? "Songbird structure" : "Songbird/cardinal structure", birds]);
   boosts.push(["Layer balance", palette.map(p=>`${p.common} (${layerLabel(p.layer)})`)]);
   const cautions = [];
   const aggressive = palette.filter(p=>p.aggressive).map(p=>p.common);
@@ -1581,7 +1600,7 @@ function renderWhy(inputs, palette, score, region){
   if(pet.length) cautions.push(["Toxicity review", pet, "Confirm plant risk before placing where pets or children browse."]);
   if(squirrel.length && inputs.squirrelAware) cautions.push(["Squirrel tradeoff", squirrel, "Bird-supporting berries, fruit, and cover cannot fully exclude squirrels."]);
   if(!cautions.length) cautions.push(["No major prototype cautions", ["Selected palette"], "No aggressive, toxicity-review, or high squirrel-attractor flags dominated this run."]);
-  const biodiversityNote = hasGoal(inputs, "biodiversity") ? `<div class="tab-note-card"><h3>Maximum biodiversity mode</h3><p>This mode balances nectar, pollen, monarch host plants, fall migration nectar, hummingbird flowers, songbird seed/berry value, layered structure, and overwintering habitat.</p></div>` : "";
+  const biodiversityNote = hasGoal(inputs, "biodiversity") ? `<div class="tab-note-card"><h3>Maximum biodiversity mode</h3><p>${isIreland(inputs) ? "This mode balances nectar, pollen, hawk-moth nectar, autumn ivy and late nectar, songbird seed/berry value, hedgerow cover, layered structure, and overwintering habitat." : "This mode balances nectar, pollen, monarch host plants, fall migration nectar, hummingbird flowers, songbird seed/berry value, layered structure, and overwintering habitat."}</p></div>` : "";
   return biodiversityNote + `<div class="logic-grid">
     <article class="logic-card good"><h3>Filters applied</h3><ul class="logic-list">${filtered.map(x=>`<li>${esc(x)}</li>`).join("")}</ul></article>
     <article class="logic-card good"><h3>Goal boosts</h3>${boosts.map(([label,items])=>`<p><strong>${esc(label)}:</strong> ${items.slice(0,8).map(x=>`<span class="chip">${esc(x)}</span>`).join("")}</p>`).join("")}</article>
@@ -1604,12 +1623,12 @@ function scoreRowDetails(score, inputs){
     },
     {
       label:"Host plant support", val:score.hostSupport, max:20,
-      meaning:"Host plants are the plants caterpillars eat. For example, monarch caterpillars need milkweed; Gulf fritillaries use passionflower. Nectar plants feed adult butterflies, but host plants let them reproduce.",
-      improve:"Add a host plant that fits the site, such as an appropriate milkweed for monarch goals or passionflower where a vine/support makes sense."
+      meaning:(inputs && isIreland(inputs)) ? "Host plants are the plants caterpillars eat. For example, the brimstone butterfly uses alder buckthorn, and many Irish butterflies and moths rely on native grasses, willows, and hedgerow shrubs. Nectar plants feed the adults, but host plants let them reproduce." : "Host plants are the plants caterpillars eat. For example, monarch caterpillars need milkweed; Gulf fritillaries use passionflower. Nectar plants feed adult butterflies, but host plants let them reproduce.",
+      improve:(inputs && isIreland(inputs)) ? "Add a native larval host that fits the site, such as alder buckthorn for the brimstone, native grasses for meadow browns and skippers, or willow and hedgerow shrubs." : "Add a host plant that fits the site, such as an appropriate milkweed for monarch goals or passionflower where a vine/support makes sense."
     },
     {
       label:"Pollinator / wildlife support", val:score.pollinatorSupport, max:15,
-      meaning:"Combines bee, butterfly, hummingbird, monarch, and songbird/cardinal value based on the selected habitat goals.",
+      meaning:(inputs && isIreland(inputs)) ? "Combines bee, butterfly, hawk-moth, and songbird value based on the selected habitat goals." : "Combines bee, butterfly, hummingbird, monarch, and songbird/cardinal value based on the selected habitat goals.",
       improve:"Select additional habitat goals or add plants with stronger nectar, pollen, seed-head, berry, or shelter value."
     },
     {
@@ -1660,7 +1679,16 @@ function renderRegionNotes(inputs, palette, region){
   <p><strong>Woody/vine count:</strong> ${woody} selected species are shrubs, vines, or evergreen/cover structure. This helps birds but should be scaled carefully in small beds.</p>
   <h3>Validation sources to keep attached to this prototype</h3>
   <div class="source-list">
-    ${(region.locations && region.locations[0] === "80906") ? `
+    ${(region.locations && region.locations[0] === "N39YF64") ? `
+    <a href="https://pollinators.ie/" target="_blank" rel="noopener">All-Ireland Pollinator Plan — pollinator-friendly planting and management</a>
+    <a href="https://pollinators.ie/wp-content/uploads/2022/12/Pollinator-Planting-Code-Guide-2022-WEB.pdf" target="_blank" rel="noopener">AIPP Pollinator-Friendly Planting Code — native hedgerow and seasonal plant lists</a>
+    <a href="https://pollinators.ie/gardens/" target="_blank" rel="noopener">All-Ireland Pollinator Plan — actions for pollinators in gardens</a>
+    <a href="https://biodiversityireland.ie/" target="_blank" rel="noopener">National Biodiversity Data Centre — Irish species distributions and records</a>
+    <a href="https://www.bsbi.org/ireland" target="_blank" rel="noopener">Botanical Society of Britain &amp; Ireland — Irish native plant distribution</a>
+    <a href="https://www.botanicgardens.ie/" target="_blank" rel="noopener">National Botanic Gardens, Glasnevin — Irish native plant resources</a>
+    <a href="https://hgic.clemson.edu/can-plants-repel-problematic-insects/" target="_blank" rel="noopener">Clemson HGIC — limits of mosquito-repellent plant claims</a>
+    <a href="https://hgic.clemson.edu/factsheet/planting-shrubs-correctly/" target="_blank" rel="noopener">Clemson HGIC — shrub planting and first-year root-ball watering</a>
+    ` : (region.locations && region.locations[0] === "80906") ? `
     <a href="https://conps.org/" target="_blank" rel="noopener">Colorado Native Plant Society — statewide native plant resources</a>
     <a href="https://plantselect.org/" target="_blank" rel="noopener">Plant Select — vetted plants for Colorado and the Intermountain West</a>
     <a href="https://extension.colostate.edu/topic-areas/yard-garden/" target="_blank" rel="noopener">CSU Extension — Front Range yard and garden guidance</a>
@@ -1723,16 +1751,21 @@ function promptText(inputs, palette, region){
   const isCoSprings = region.locations && region.locations[0] === "80906";
   const isNorthBay = region.locations && region.locations[0] === "94503";
   const isKentucky = region.locations && region.locations[0] === "40241";
-  const regionDesc = isCoSprings
+  const isIreland = region.locations && region.locations[0] === "N39YF64";
+  const regionDesc = isIreland
+    ? "Ballymahon, Co. Longford, Irish midlands residential setting, mild damp oceanic climate, soft overcast light, green hedgerow-and-meadow backdrop optional, lush low-midland planting"
+    : isCoSprings
     ? "Colorado Springs / Front Range residential setting, semi-arid, rocky mountain foothills backdrop optional, clear dry-sky light"
     : isNorthBay
     ? "American Canyon / Napa North Bay California residential setting, Mediterranean summer-dry climate, golden oak-studded hills backdrop optional, bright clear coastal-valley light"
     : isKentucky
     ? "Louisville / Kentucky Bluegrass residential setting, humid continental climate with cold winters and hot humid summers, Eastern deciduous woodland edge backdrop optional, soft humid Ohio Valley light"
     : "Houston residential neighborhood, warm humid Gulf Coast light, brick or bungalow context optional";
-  const midDefault = isCoSprings ? "native Front Range perennials" : isNorthBay ? "summer-dry California-native perennials" : isKentucky ? "flowering Kentucky-native woodland and prairie perennials" : "flowering native Gulf Coast perennials";
-  const densityNote = isCoSprings ? "realistic Front Range dry-garden density" : isNorthBay ? "realistic summer-dry California-native density" : isKentucky ? "realistic Eastern woodland-edge density" : "realistic Gulf Coast density";
-  const negativeNote = isCoSprings
+  const midDefault = isIreland ? "flowering Irish native meadow and hedgerow perennials" : isCoSprings ? "native Front Range perennials" : isNorthBay ? "summer-dry California-native perennials" : isKentucky ? "flowering Kentucky-native woodland and prairie perennials" : "flowering native Gulf Coast perennials";
+  const densityNote = isIreland ? "realistic soft, lush Irish oceanic-meadow density" : isCoSprings ? "realistic Front Range dry-garden density" : isNorthBay ? "realistic summer-dry California-native density" : isKentucky ? "realistic Eastern woodland-edge density" : "realistic Gulf Coast density";
+  const negativeNote = isIreland
+    ? "No desert or xeric gravel garden, no tropical or Mediterranean planting, no US prairie or milkweed, no monarch butterflies, no hummingbirds, no bird feeders, no cartoon style, no impossible plant scale, no invasive nursery exotics (no Fuchsia, Rhododendron, Cherry Laurel, Sycamore) as focal plants."
+    : isCoSprings
     ? "No tropical plants, no lush humid jungle planting, no bird feeders, no cartoon style, no impossible plant scale, no invasive nursery exotics as focal plants."
     : isNorthBay
     ? "No tropical plants, no tropical milkweed, no desert cactus garden, no lush summer-irrigated lawn, no bird feeders, no cartoon style, no impossible plant scale, no invasive nursery exotics as focal plants."
@@ -1876,6 +1909,7 @@ function renderTesting(inputs){
 
 function renderChangelog(){
   const changes = [
+    ["V4.4", "Five-region prototype: adds Ballymahon, Co. Longford, Ireland (Eircode N39 YF64) as a mild oceanic-midlands region with ~80 Irish/European native plants — meadow, hedgerow, wetland and woodland-edge species sourced against the All-Ireland Pollinator Plan and National Biodiversity Data Centre, including autumn-nectar keystone ivy. Adds boggy/peaty, gley-clay, hedgerow-edge and exposed-wind micro-site conditions, a peaty/gley soil model, oceanic (no summer-dry) moisture framing, and Irish image-prompt wording. Goal handling is region-conditional: Hummingbirds is relabelled to a hummingbird hawk-moth nectar goal and Cardinals to a general songbird goal (both reuse the existing scoring logic unchanged), and the Monarch goal is hidden for Ireland and restored for US regions. Purely additive: the four US regions, the pool/salt condition, and all existing goals behave exactly as before."],
     ["V4.3", "Adds an opt-in \"Pool splash zone / salt edge\" micro-site condition across all four regions, for the narrow salt-concentrated strip at the edge of a saltwater pool (~3,200 ppm) where splash-out and evaporation build up salt. It biases the palette toward salt-tolerant plants and away from salt-sensitive ones using salt tolerance inferred from existing traits/tags — coastal-tagged, grass, dry/lean-soil, and urban-heat plants lean salt-tolerant; woodland-shade and obligate-wet/bog species lean salt-sensitive — plus a small hand-curated override list (~15 plants) for well-documented exceptions. Surfaces splash-zone guidance: plant salt-tolerant species in the first few feet, route filter backwash and pool-drain water to a drain rather than a bed, and treat salt as negligible beyond the splash zone. Purely additive: the four existing regions and every pre-existing condition behave exactly as before."],
     ["V4.2", "Four-region prototype: adds Louisville / East End, Kentucky (40241) as a humid-continental, cold-winter / humid-summer region with 100+ Kentucky-native woodland and Bluegrass-region plants alongside Houston / Gulf Coast (77429), Colorado Springs / Front Range (80906), and American Canyon / North Bay California (94503). Includes limestone-clay and woodland-shade micro-site conditions, rain-garden and flood-edge handling for the Ohio Valley, Eastern deciduous-woodland image-prompt framing, and monarch guidance favoring regional native milkweeds over tropical milkweed."],
     ["V4.1", "Three-region prototype: adds American Canyon / North Bay California (94503) as a Mediterranean, summer-dry region with ~80 California-native plants alongside Houston / Gulf Coast (77429) and Colorado Springs / Front Range (80906). Includes summer-dry moisture and watering guidance, California micro-site conditions (summer-dry, oak understory, lean/serpentine soil, wildfire-wise/defensible space), heavy deer-pressure awareness, and monarch guidance favoring narrowleaf milkweed (Asclepias fascicularis) over tropical milkweed."],
@@ -1903,6 +1937,16 @@ function renderChangelog(){
 
 
 const regionConditions = {
+  "N39YF64": [
+    {value:"standard",label:"Standard Irish midlands garden"},
+    {value:"boggyPeat",label:"Boggy / peaty wet-midlands pocket"},
+    {value:"gleyClay",label:"Damp gley clay / slow drainage"},
+    {value:"hedgerowEdge",label:"Hedgerow / woodland edge (part shade)"},
+    {value:"rainGarden",label:"Rain garden / wet swale: catches runoff after rain"},
+    {value:"exposedWind",label:"Exposed, wind-swept open site"},
+    {value:"patioContainer",label:"Patio / container cluster"},
+    {value:"hoaFront",label:"Tidy front-garden appearance"}
+  ],
   "77429": [
     {value:"standard",label:"Standard Houston yard"},
     {value:"gumboClay",label:"Gumbo clay / compacted lawn"},
@@ -1956,7 +2000,7 @@ const regionConditions = {
 };
 
 function updateConditionDropdown(zip){
-  const z = String(zip).replace(/\D/g, "").slice(0,5);
+  const z = regionKey(zip);
   const conditions = regionConditions[z];
   const sel = $("condition");
   if(!sel || !conditions) return;
@@ -1967,6 +2011,12 @@ function updateConditionDropdown(zip){
 }
 
 const regionSoil = {
+  "N39YF64": [
+    {value:"peat",    label:"Peaty / organic"},
+    {value:"clay",    label:"Gley / heavy wet clay"},
+    {value:"loam",    label:"Clay-loam"},
+    {value:"unknown", label:"Not sure"}
+  ],
   "77429": [
     {value:"unknown", label:"Unknown"},
     {value:"clay",    label:"Clay / gumbo"},
@@ -1994,6 +2044,11 @@ const regionSoil = {
 };
 
 const regionMoisture = {
+  "N39YF64": [
+    {value:"wet",     label:"Wet / boggy / peaty"},
+    {value:"average", label:"Average (soft oceanic)"},
+    {value:"dry",     label:"Free-draining / raised bank"}
+  ],
   "77429": [
     {value:"dry",     label:"Dry / fast draining"},
     {value:"average", label:"Average"},
@@ -2017,7 +2072,7 @@ const regionMoisture = {
 };
 
 function updateSoilMoistureDropdowns(zip){
-  const z = String(zip).replace(/\D/g,"").slice(0,5);
+  const z = regionKey(zip);
   [["soil", regionSoil], ["moisture", regionMoisture]].forEach(([id, lookup]) => {
     const opts = lookup[z];
     const sel = $(id);
@@ -2030,6 +2085,14 @@ function updateSoilMoistureDropdowns(zip){
 }
 
 const sampleScenarios = {
+  "N39YF64": [
+    {id:"sampleFrontBtn", label:"Tidy Irish front bed",     run:()=>setSample(["biodiversity","bees"],"tidy","part","average","hoaFront",16,6,false,"flowerBed","oval","N39YF64")},
+    {id:"sampleBackBtn",  label:"Hedgerow songbird border",  run:()=>setSample(["biodiversity","cardinals","butterflies"],"backyardHabitat","part","average","hedgerowEdge",22,10,false,"fenceLine","strip","N39YF64")},
+    {id:"samplePatioBtn", label:"Hawk-moth nectar patio",    run:()=>setSample(["hummingbirds","butterflies"],"patioView","part","average","patioContainer",12,6,true,"patioCluster","oval","N39YF64")},
+    {id:"sampleFenceBtn", label:"Meadow butterflies",        run:()=>setSample(["butterflies","bees"],"meadow","full","average","standard",20,5,false,"flowerBed","kidney","N39YF64")},
+    {id:"sampleRainBtn",  label:"Boggy rain-garden pocket",   run:()=>setSample(["biodiversity","bees"],"prairie","full","wet","boggyPeat",16,8,false,"rainPocket","kidney","N39YF64")},
+    {id:"sampleSnakeBtn", label:"Exposed wind-firm bed",      run:()=>setSample(["bees","butterflies"],"colorful","full","dry","exposedWind",18,6,false,"flowerBed","strip","N39YF64")}
+  ],
   "77429": [
     {id:"sampleFrontBtn", label:"77429 front yard",       run:()=>setSample(["biodiversity","bees"],"frontCurb","full","average","hoaFront",16,6,false,"flowerBed")},
     {id:"sampleBackBtn",  label:"Backyard biodiversity",  run:()=>{setSample(["biodiversity","cardinals","butterflies"],"backyardHabitat","part","average","standard",22,10,false,"flowerBed");$("designMode").value="advanced";generate();}},
@@ -2065,7 +2128,7 @@ const sampleScenarios = {
 };
 
 function updateSampleButtons(zip){
-  const z = String(zip).replace(/\D/g,"").slice(0,5);
+  const z = regionKey(zip);
   const scenarios = sampleScenarios[z] || sampleScenarios["77429"];
   scenarios.forEach(s => { const btn = $(s.id); if(btn) btn.textContent = s.label; });
 }
@@ -2073,7 +2136,7 @@ function updateSampleButtons(zip){
 function updateBearModeVisibility(zip){
   const container = $("bearModeContainer");
   if(!container) return;
-  const isCO = String(zip).replace(/\D/g,"").slice(0,5) === "80906";
+  const isCO = regionKey(zip) === "80906";
   container.style.display = isCO ? "" : "none";
   if(!isCO && $("bearMode")) $("bearMode").value = "ignore";
 }
@@ -2081,7 +2144,7 @@ function updateBearModeVisibility(zip){
 function updateMulchTypeVisibility(zip){
   const container = $("mulchTypeContainer");
   if(!container) return;
-  const isCO = String(zip).replace(/\D/g,"").slice(0,5) === "80906";
+  const isCO = regionKey(zip) === "80906";
   container.style.display = isCO ? "" : "none";
 }
 
@@ -2096,35 +2159,44 @@ function showTab(name){
 function goalList(inputs){
   return inputs.goals && inputs.goals.length ? inputs.goals : [inputs.goal || "biodiversity"];
 }
+// Region-aware goal display (additive). Checkbox VALUES stay "hummingbirds"/"cardinals"
+// so all scoring/selection logic is reused unchanged; only the wording differs for Ireland.
+const ieGoalNames = {hummingbirds:"Hawk-moth nectar", cardinals:"Songbirds"};
+const ieGoalLabels = {hummingbirds:"Hawk-moth Nectar", cardinals:"Songbird Habitat"};
+function isIreland(inputs){ return regionKey(inputs && inputs.zip) === "N39YF64"; }
+function goalDisplay(g, inputs){ return (isIreland(inputs) && ieGoalNames[g]) || goalNames[g] || goalLabel(g); }
+function goalTitleName(g, inputs){ return (isIreland(inputs) && ieGoalLabels[g]) || goalLabel(g); }
 function goalListText(inputs){
-  return goalList(inputs).map(g=>goalNames[g] || goalLabel(g)).join(" + ");
+  return goalList(inputs).map(g=>goalDisplay(g, inputs)).join(" + ");
 }
 function goalTitle(inputs){
   const goals = goalList(inputs);
-  if(goals.length === 1) return goalLabel(goals[0]);
-  return goals.map(g=>goalNames[g] || goalLabel(g)).join(" + ");
+  if(goals.length === 1) return goalTitleName(goals[0], inputs);
+  return goals.map(g=>goalDisplay(g, inputs)).join(" + ");
 }
 function wildlifePhrase(inputs){
   const isCO = inputs.locations && inputs.locations[0] === "80906";
   const isCA = inputs.locations && inputs.locations[0] === "94503";
   const isKY = inputs.locations && inputs.locations[0] === "40241";
+  const isIE = inputs.locations && inputs.locations[0] === "N39YF64";
   const parts = [];
   if(hasGoal(inputs,"bees")) parts.push("native bees visible on small clustered flowers");
-  if(hasGoal(inputs,"butterflies")) parts.push(isCO ? "several Front Range butterflies visiting nectar flowers" : isCA ? "several California butterflies visiting nectar flowers" : isKY ? "several Eastern woodland butterflies visiting nectar flowers" : "several Gulf Coast butterflies visiting nectar flowers");
+  if(hasGoal(inputs,"butterflies")) parts.push(isCO ? "several Front Range butterflies visiting nectar flowers" : isCA ? "several California butterflies visiting nectar flowers" : isKY ? "several Eastern woodland butterflies visiting nectar flowers" : isIE ? "several Irish meadow butterflies visiting nectar flowers" : "several Gulf Coast butterflies visiting nectar flowers");
   if(hasGoal(inputs,"monarchs")) parts.push("one monarch butterfly near native milkweed and fall nectar");
-  if(hasGoal(inputs,"hummingbirds")) parts.push(isCO ? "one broad-tailed hummingbird visiting tubular flowers" : isCA ? "one Anna's hummingbird visiting tubular flowers" : "one ruby-throated hummingbird visiting red tubular flowers");
-  if(hasGoal(inputs,"cardinals")) parts.push(isCA ? "one California towhee or other songbird perched near dense cover, no feeder, no loose seed" : "one northern cardinal perched near dense cover, no feeder, no loose seed");
-  if(!parts.length || hasGoal(inputs,"biodiversity")) parts.push("native bees, butterflies, one monarch, one hummingbird, and songbirds implied by cover");
+  if(hasGoal(inputs,"hummingbirds")) parts.push(isIE ? "a hummingbird hawk-moth hovering at tubular nectar flowers (no hummingbirds occur in Ireland)" : isCO ? "one broad-tailed hummingbird visiting tubular flowers" : isCA ? "one Anna's hummingbird visiting tubular flowers" : "one ruby-throated hummingbird visiting red tubular flowers");
+  if(hasGoal(inputs,"cardinals")) parts.push(isIE ? "a robin, finch, or tit perched near dense native cover, no feeder, no loose seed" : isCA ? "one California towhee or other songbird perched near dense cover, no feeder, no loose seed" : "one northern cardinal perched near dense cover, no feeder, no loose seed");
+  if(!parts.length || hasGoal(inputs,"biodiversity")) parts.push(isIE ? "native bees and butterflies, a hummingbird hawk-moth at tubular flowers, and Irish songbirds implied by hedgerow cover" : "native bees, butterflies, one monarch, one hummingbird, and songbirds implied by cover");
   return unique(parts).join("; ");
 }
 function goalExtraPhrase(inputs){
+  const isIE = inputs.locations && inputs.locations[0] === "N39YF64";
   const parts = [];
   if(hasGoal(inputs,"bees")) parts.push("bee-forward pollen and nectar continuity");
   if(hasGoal(inputs,"butterflies")) parts.push("butterfly nectar and host-plant support");
   if(hasGoal(inputs,"monarchs")) parts.push("native milkweed host plants plus abundant late-season nectar for migration corridors");
-  if(hasGoal(inputs,"hummingbirds")) parts.push("tubular flowers and hummingbird-friendly regional natives");
-  if(hasGoal(inputs,"cardinals")) parts.push("songbird habitat with seed heads, berries where appropriate, evergreen or dense cover, and no loose birdseed");
-  if(hasGoal(inputs,"biodiversity") || !parts.length) parts.push("high biodiversity habitat with native bees, butterflies, monarch host plants, hummingbirds, songbirds, fall nectar, seed heads, and overwintering structure");
+  if(hasGoal(inputs,"hummingbirds")) parts.push(isIE ? "tubular, nectar-rich native flowers for long-tongued bees and the hummingbird hawk-moth" : "tubular flowers and hummingbird-friendly regional natives");
+  if(hasGoal(inputs,"cardinals")) parts.push(isIE ? "Irish songbird habitat (robins, finches, tits) with hedgerow berries, seed heads, evergreen or dense native cover, and no loose birdseed" : "songbird habitat with seed heads, berries where appropriate, evergreen or dense cover, and no loose birdseed");
+  if(hasGoal(inputs,"biodiversity") || !parts.length) parts.push(isIE ? "high-biodiversity Irish native habitat with bees, butterflies, hawk-moth nectar, songbird food, autumn ivy nectar, seed heads, and overwintering structure" : "high biodiversity habitat with native bees, butterflies, monarch host plants, hummingbirds, songbirds, fall nectar, seed heads, and overwintering structure");
   if(inputs.mosquitoAware) parts.push("an aromatic seating-edge companion strip treated as a comfort cue, not mosquito control");
   return unique(parts).join("; ");
 }
@@ -2175,15 +2247,32 @@ function soilLabel(s, zip){
   if(zip === "80906") return {unknown:"unknown soil", sandy:"Sandy / gravelly / decomposed granite", loam:"Loam / clay loam", clay:"Clay (alkaline)"}[s] || s;
   if(zip === "94503") return {unknown:"unknown soil", loam:"Loam / clay loam", clay:"Clay / adobe", sandy:"Sandy / rocky / lean"}[s] || s;
   if(zip === "40241") return {unknown:"unknown soil", clay:"limestone clay / heavy clay", loam:"silt loam / clay loam", sandy:"sandy / rocky / well-drained"}[s] || s;
+  if(zip === "N39YF64") return {unknown:"unknown soil", peat:"peaty / organic", clay:"gley / heavy wet clay", loam:"clay-loam", sandy:"sandy / lean bank"}[s] || s;
   return {unknown:"unknown soil", clay:"clay / gumbo", loam:"loam", sandy:"sandy"}[s] || s;
 }
-function conditionLabel(c){return {standard:"standard yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", poolSplash:"pool splash zone / salt edge", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard", xeric:"xeric / drought-adapted", rockGarden:"rock garden / excellent drainage", highDesert:"high desert / rocky / alkaline", shadedSite:"shaded site / north-facing", summerDry:"summer-dry / no summer irrigation", clayAdobe:"heavy clay / adobe", oakUnderstory:"oak understory / dry shade", serpentineLean:"lean / rocky / serpentine soil", firewise:"wildfire-wise / defensible space", limestoneClay:"limestone clay / heavy clay", woodlandShade:"woodland shade / deciduous understory"}[c] || c;}
+function conditionLabel(c){return {standard:"standard yard", gumboClay:"gumbo clay / compacted lawn", urbanHeat:"urban heat / reflected sun", streetHellstrip:"street hellstrip / curb edge", rainGarden:"rain garden / swale: catches runoff after rain", floodEdge:"flood-prone edge", coastalExposure:"coastal wind / salt exposure", poolSplash:"pool splash zone / salt edge", heavyClay:"heavy clay / slow drainage", patioContainer:"patio / container cluster", postFreeze:"post-freeze recovery planting", hoaFront:"HOA-visible front yard", xeric:"xeric / drought-adapted", rockGarden:"rock garden / excellent drainage", highDesert:"high desert / rocky / alkaline", shadedSite:"shaded site / north-facing", summerDry:"summer-dry / no summer irrigation", clayAdobe:"heavy clay / adobe", oakUnderstory:"oak understory / dry shade", serpentineLean:"lean / rocky / serpentine soil", firewise:"wildfire-wise / defensible space", limestoneClay:"limestone clay / heavy clay", woodlandShade:"woodland shade / deciduous understory", boggyPeat:"boggy / peaty wet-midlands pocket", gleyClay:"damp gley clay / slow drainage", hedgerowEdge:"hedgerow / woodland edge (part shade)", exposedWind:"exposed, wind-swept open site"}[c] || c;}
 function goalLabel(goal){
   return {bees:"Bee Pollinator", butterflies:"Butterfly Pollinator", monarchs:"Monarch Habitat", hummingbirds:"Hummingbird Nectar", cardinals:"Cardinal / Songbird Habitat", biodiversity:"Maximum Biodiversity"}[goal] || "Habitat";
 }
 function layerLabel(layer){return {front:"front / ground layer", middle:"middle", back:"back / structure"}[layer] || layer;}
 function shortName(name){
   return name.replace("Gulf Coast ","Gulf ").replace("American ","").replace("Texas ","").replace("Lanceleaf ","").replace("Mealy blue ","Blue ").replace("Scarlet ","").replace("Fall ","").replace("Purple ","").split(" ").slice(0,2).join(" ");
+}
+
+function updateGoalsForRegion(zip){
+  // Region-conditional goal wording/visibility (additive). US regions keep all six goals with
+  // original labels; Ireland relabels hummingbirds->hawk-moth and cardinals->songbirds (values
+  // unchanged, so scoring is reused), and hides the monarch goal (no monarch population/milkweed in IE).
+  const ie = regionKey(zip) === "N39YF64";
+  const humText = $("goalHummingbirdsText");
+  const cardText = $("goalCardinalsText");
+  const monWrap = $("goalMonarchsWrap");
+  const monBox = $("goalMonarchs");
+  if(humText) humText.textContent = ie ? "Hawk-moth nectar" : "Hummingbirds";
+  if(cardText) cardText.textContent = ie ? "Songbirds" : "Cardinals / songbirds";
+  if(monWrap) monWrap.style.display = ie ? "none" : "";
+  if(ie && monBox) monBox.checked = false;
+  if(ie && !document.querySelectorAll(".goalCheck:checked").length && $("goalBiodiversity")) $("goalBiodiversity").checked = true;
 }
 
 function setGoalChecks(goals){
@@ -2218,6 +2307,7 @@ function setSample(goals, style, sun="part", moisture="average", condition="stan
   updateSoilMoistureDropdowns($("zip").value);
   updateBearModeVisibility(zip);
   updateMulchTypeVisibility(zip);
+  updateGoalsForRegion(zip);
   generate();
 }
 
@@ -2250,6 +2340,7 @@ function resetInputs(){
   updateSampleButtons("77429");
   updateBearModeVisibility("77429");
   updateMulchTypeVisibility("77429");
+  updateGoalsForRegion("77429");
   $("results").innerHTML = `<div class="empty"><h2>No design generated yet</h2><p class="muted">Click <strong>Generate design</strong>. After generation, the app scrolls to the full-width results area. Use the prominent tabs to review the plan summary, plant palette, layout map, score guidance, warnings, region notes, and visual prompts.</p></div>`;
 }
 
@@ -2291,13 +2382,13 @@ function copyFeedbackQuestions(){ copyTextById('feedbackQuestionsText', 'testCop
 function copyScenario(){ copyTextById('scenarioText', 'testCopyStatus'); }
 
 window.PS = {showTab, generate, resetInputs, printDesignSheet, copyPrompt, copyUploadedPhotoPrompt, copyFeedbackQuestions, copyScenario, openPlantImage, closePlantImage};
-$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSoilMoistureDropdowns($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); updateMulchTypeVisibility($("zip").value); });
+$("zip").addEventListener("change", () => { updateConditionDropdown($("zip").value); updateSoilMoistureDropdowns($("zip").value); updateSampleButtons($("zip").value); updateBearModeVisibility($("zip").value); updateMulchTypeVisibility($("zip").value); updateGoalsForRegion($("zip").value); });
 $("generateBtn").addEventListener("click", generate);
 $("resetBtn").addEventListener("click", resetInputs);
 $("printBtn").addEventListener("click", printDesignSheet);
 ["sampleFrontBtn","sampleBackBtn","samplePatioBtn","sampleFenceBtn","sampleRainBtn","sampleSnakeBtn"].forEach(id => {
   $(id).addEventListener("click", () => {
-    const z = String($("zip").value).replace(/\D/g,"").slice(0,5);
+    const z = regionKey($("zip").value);
     const s = (sampleScenarios[z] || sampleScenarios["77429"]).find(x => x.id === id);
     if(s) s.run();
   });
@@ -2306,4 +2397,6 @@ updateSoilMoistureDropdowns($("zip").value);
 updateSampleButtons($("zip").value);
 updateBearModeVisibility($("zip").value);
 updateMulchTypeVisibility($("zip").value);
+updateConditionDropdown($("zip").value);
+updateGoalsForRegion($("zip").value);
 })();
